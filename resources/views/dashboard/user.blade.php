@@ -18,7 +18,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #F5F5F7;
             color: #333;
-            
+
         }
 
         body::-webkit-scrollbar {
@@ -41,11 +41,13 @@
             width: 280px;
             height: 100vh;
             overflow-x: hidden;
-            
+
         }
-        .user-sidebar::-webkit-scrollbar{
-            display:none;
+
+        .user-sidebar::-webkit-scrollbar {
+            display: none;
         }
+
         .sidebar-header {
             display: flex;
             align-items: center;
@@ -190,7 +192,7 @@
             font-weight: 600;
             transition: all 0.3s ease;
             font-family: inherit;
-            right:22px;
+            right: 22px;
         }
 
         .logout-btn:hover {
@@ -733,7 +735,7 @@
         <!-- PROFILE CARD -->
         <div class="user-profile-card">
             <div class="user-avatar">👤</div>
-            <h3 id="userNameDisplay">Ahmad Rifai</h3>
+            <h3 id="userNameDisplay">{{ Auth::user()->name }}</h3>
             <p id="userRoomDisplay">Kamar 01A</p>
             <div class="user-room-info">
                 <strong>Status:</strong>
@@ -780,10 +782,13 @@
         </button>
 
         <div class="sidebar-footer">
-            <button class="logout-btn" onclick="logoutUser()">
-                <i class="fas fa-sign-out-alt"></i>
-                Keluar
-            </button>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Keluar
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1502,7 +1507,8 @@
         </div>
     </div>
 
-    <script src="{{ asset('js/user-dashboard.js') }}"></script>
+    {{--
+    <script src="{{ asset('js/user-dashboard.js') }}"></script> --}}
 </body>
 
 </html>

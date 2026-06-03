@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - KosKita</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -208,13 +210,25 @@
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-8px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* SPINNER */
-        .loading { display: none; }
-        .loading.show { display: inline-block; }
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: inline-block;
+        }
 
         .spinner {
             border: 3px solid rgba(255, 255, 255, 0.3);
@@ -225,7 +239,11 @@
             animation: spin 0.8s linear infinite;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* DEMO INFO */
         .demo-info {
@@ -295,7 +313,7 @@
             background: white;
             padding: 8px 14px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .back-to-home:hover {
@@ -311,14 +329,18 @@
                 border-radius: 12px;
             }
 
-            .login-left { display: none; }
+            .login-left {
+                display: none;
+            }
 
-            .login-right { padding: 40px 25px; }
+            .login-right {
+                padding: 40px 25px;
+            }
         }
     </style>
 </head>
-<body>
 
+<body>
     <!-- BACK TO HOME -->
     <a href="/" class="back-to-home">
         <i class="fas fa-arrow-left"></i>
@@ -348,30 +370,18 @@
             <div class="error-message" id="errorMessage"></div>
 
             <!-- LOGIN FORM -->
-            <!-- PENTING: onsubmit memanggil handleLogin(event) -->
-            <form id="loginForm" onsubmit="handleLogin(event)">
+            <form id="loginForm" method="POST" action="{{ route('login.process') }}">
+                @csrf
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email" 
-                        placeholder="Masukkan email Anda"
-                        required
-                        autocomplete="email"
-                    >
+                    <input type="email" id="email" name="email" placeholder="Masukkan email Anda" required
+                        value="{{ old('email') }}">
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        placeholder="Masukkan password"
-                        required
-                        autocomplete="current-password"
-                    >
+                    <input type="password" id="password" name="password" placeholder="Masukkan password" required
+                        autocomplete="current-password">
                 </div>
 
                 <div class="remember-forgot">
@@ -388,28 +398,33 @@
                 </button>
 
                 <p class="signup-text">
-                    Belum punya akun? <a href="#signup">Daftar di sini</a>
+                    Belum punya akun? <a href="{{ route('register.page') }}">Daftar di sini</a>
                 </p>
             </form>
-
-            <!-- DEMO CREDENTIALS -->
-            <div class="demo-info">
-                <strong>🔑 Demo Credentials:</strong>
-
-                <div class="demo-row">
-                    <span class="role-badge badge-admin">Admin</span>
-                    <span>Email: <code>admin@koskita.com</code> | Pass: <code>admin123</code></span>
-                </div>
-
-                <div class="demo-row">
-                    <span class="role-badge badge-user">User</span>
-                    <span>Email: <code>user@koskita.com</code> | Pass: <code>user123</code></span>
-                </div>
-            </div>
         </div>
 
     </div>
 
-    <script src="{{ asset('js/login.js') }}"></script>
+    @if (session('success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sukses',
+                    text: @json(session('success'))
+                });
+            });
+        </script>
+    @endif
+    @if (session('error'))
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: '{{ session('error') }}',
+            });
+        </script>
+    @endif
 </body>
+
 </html>
