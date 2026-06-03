@@ -27,7 +27,8 @@
                 <div class="navbar-actions">
                     <button class="btn btn-primary" onclick="window.location.href='/booking'">Booking
                         Sekarang</button>
-                    <button class="btn btn-login" onclick="window.location.href='/login'">Login</button>
+                    <button class="btn btn-login"
+                        onclick="window.location.href='{{ route('login.page') }}'">Login</button>
 
                 </div>
             </div>
@@ -301,7 +302,7 @@
         </div>
     </footer>
 
-        <script src="{{ asset('js/script.js') }}"></script>
+    <script src="{{ asset('js/script.js') }}"></script>
 </body>
 
 </html>
