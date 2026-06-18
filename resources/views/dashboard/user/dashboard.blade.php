@@ -31,7 +31,7 @@
                     <div class="info-card-label">Sisa Masa Sewa</div>
                     @php
                         $leaseEnd = $user->tenantProfile?->lease_end;
-                        $monthsLeft = $leaseEnd ? max(0, now()->diffInMonths($leaseEnd, false)) : 0;
+                        $monthsLeft = $leaseEnd ? max(0, (int) floor(now()->diffInMonths($leaseEnd, false))) : 0;
                     @endphp
                     <div class="info-card-value">{{ $monthsLeft }} Bulan</div>
                     <div class="info-card-action">

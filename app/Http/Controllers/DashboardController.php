@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
+use App\Models\Message;
 use App\Models\Payment;
 use App\Models\Room;
 use App\Models\TenantProfile;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -80,6 +83,11 @@ class DashboardController extends Controller
             ->orderBy('number')
             ->get();
 
+        $availableUsers = User::where('role', 'user')
+            ->whereDoesntHave('tenantProfile')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
         $payments = Payment::with('user.tenantProfile.room')
             ->orderByDesc('due_date')
             ->get();
@@ -124,16 +132,36 @@ class DashboardController extends Controller
 
         $recentTransactions = $payments->take(10);
 
+        $recentActivities = ActivityLog::with('user.tenantProfile.room')
+            ->orderByDesc('activity_date')
+            ->orderByDesc('id')
+            ->take(5)
+            ->get();
+
+        $upcomingPayments = $payments
+            ->where('status', 'pending')
+            ->sortBy('due_date')
+            ->take(5)
+            ->values();
+
+        $messages = Message::orderByDesc('created_at')
+            ->take(5)
+            ->get();
+
         return view('dashboard.admin.admin', compact(
             'rooms',
             'roomStats',
             'tenants',
             'tenantStats',
             'availableRooms',
+            'availableUsers',
             'financeStats',
             'monthlyFinance',
             'maxMonthlyAmount',
-            'recentTransactions'
+            'recentTransactions',
+            'recentActivities',
+            'upcomingPayments',
+            'messages'
         ));
     }
 }

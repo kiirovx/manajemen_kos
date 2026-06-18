@@ -18,47 +18,43 @@ class RouteTest extends TestCase
     }
 
     /**
-     * Test index route returns user dashboard
+     * Test index route redirects to home (legacy redirect)
      */
     public function test_index_route_returns_user_dashboard(): void
     {
         $response = $this->get('/index');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertRedirect('/');
     }
 
     /**
-     * Test admin route returns admin dashboard view
+     * Test admin route redirects to admin dashboard (legacy redirect)
      */
     public function test_admin_route_returns_admin_dashboard(): void
     {
         $response = $this->get('/admin');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('admin.admin-dashboard');
+        $response->assertRedirect('/dashboard/admin');
     }
 
     /**
-     * Test user route returns user dashboard view
+     * Test user route redirects to user dashboard (legacy redirect)
      */
     public function test_user_route_returns_user_dashboard(): void
     {
         $response = $this->get('/user');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertRedirect('/dashboard/user');
     }
 
     /**
-     * Test login route returns login view
+     * Test login route redirects to auth login (legacy redirect)
      */
     public function test_login_route_returns_login_view(): void
     {
         $response = $this->get('/login');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('login');
+        $response->assertRedirect('/auth/login');
     }
 
     /**
@@ -69,7 +65,7 @@ class RouteTest extends TestCase
         $response = $this->get('/booking');
 
         $response->assertStatus(200);
-        $response->assertViewIs('booking');
+        $response->assertViewIs('booking.booking');
     }
 
     /**

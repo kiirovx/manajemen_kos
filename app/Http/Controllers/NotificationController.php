@@ -18,4 +18,21 @@ class NotificationController extends Controller
             'message' => 'Semua notifikasi ditandai sebagai dibaca.',
         ]);
     }
+
+    public function send()
+    {
+        $user = Auth::user();
+
+        $notification = Notification::create([
+            'user_id' => $user->id,
+            'message' => 'Ini adalah notifikasi baru untuk Anda.',
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi berhasil dikirim.',
+            'data' => $notification,
+        ]);
+    }
 }

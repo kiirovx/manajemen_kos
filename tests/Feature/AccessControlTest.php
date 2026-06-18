@@ -325,10 +325,10 @@ class AccessControlTest extends TestCase
      */
     public function test_login_page_accessible_without_auth(): void
     {
-        $response = $this->get('/login');
+        $response = $this->get('/auth/login');
 
         $response->assertStatus(200);
-        $response->assertViewIs('login');
+        $response->assertViewIs('auth.login');
     }
 
     /**
@@ -342,23 +342,23 @@ class AccessControlTest extends TestCase
     }
 
     /**
-     * Test user route returns user dashboard
+     * Test user route redirects to user dashboard (legacy redirect)
      */
     public function test_user_route_returns_user_dashboard(): void
     {
         $response = $this->get('/user');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/dashboard/user');
     }
 
     /**
-     * Test admin route returns admin dashboard
+     * Test admin route redirects to admin dashboard (legacy redirect)
      */
     public function test_admin_route_returns_admin_dashboard(): void
     {
         $response = $this->get('/admin');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/dashboard/admin');
     }
 
     /**

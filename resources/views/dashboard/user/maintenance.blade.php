@@ -15,11 +15,20 @@
                 </div>
 
                 @forelse($user->maintenanceRequests as $maintenance)
+                @php
+                    $statusMap = [
+                        'pending' => ['class' => '', 'label' => 'Pending'],
+                        'in_progress' => ['class' => '', 'label' => 'Diproses'],
+                        'resolved' => ['class' => 'completed', 'label' => 'Selesai'],
+                        'completed' => ['class' => 'completed', 'label' => 'Selesai'],
+                    ];
+                    $statusInfo = $statusMap[$maintenance->status] ?? ['class' => '', 'label' => ucfirst($maintenance->status)];
+                @endphp
                 <div class="maintenance-item">
                     <div class="maintenance-header">
                         <div class="maintenance-title">{{ $maintenance->title }}</div>
-                        <div class="maintenance-status {{ $maintenance->status === 'completed' ? 'completed' : '' }}">
-                            {{ $maintenance->status === 'completed' ? 'Selesai' : 'Pending' }}
+                        <div class="maintenance-status {{ $statusInfo['class'] }}">
+                            {{ $statusInfo['label'] }}
                         </div>
                     </div>
                     <div class="maintenance-desc">{{ $maintenance->description }}</div>

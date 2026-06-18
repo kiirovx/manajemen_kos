@@ -41,4 +41,28 @@ class MaintenanceController extends Controller
             'message' => 'Maintenance berhasil diajukan! Tim kami akan segera menghubungi Anda.',
         ]);
     }
+
+    public function updateStatus(Request $request, MaintenanceRequest $maintenance)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,in_progress,resolved',
+        ]);
+
+        $maintenance->update([
+            'status' => $validated['status'],
+        ]);
+
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'activity_type' => 'Maintenance',
+            'description' => "Ubah status perbaikan: {$maintenance->title} menjadi {$validated['status']}",
+            'status' => ucfirst($validated['status']),
+            'activity_date' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status maintenance berhasil diperbarui!',
+        ]);
+    }
 }

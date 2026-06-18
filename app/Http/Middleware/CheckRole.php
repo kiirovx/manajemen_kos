@@ -10,11 +10,13 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, string $role): Response
     {
+        // dd($request->user(), $role);
         if (! $request->user()) {
-            return redirect()->route('login');
+            return redirect()->route('login.page');
         }
 
         if ($request->user()->role !== $role) {
+
             return redirect()->route(
                 $request->user()->role === 'admin' ? 'dashboard.admin' : 'dashboard.users'
             );

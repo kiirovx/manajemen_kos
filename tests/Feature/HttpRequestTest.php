@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class HttpRequestTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * Test GET request to home route
      */
@@ -18,43 +21,43 @@ class HttpRequestTest extends TestCase
     }
 
     /**
-     * Test GET request to index route
+     * Test GET request to index route (legacy redirect to home)
      */
     public function test_get_index_route(): void
     {
         $response = $this->get('/index');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/');
     }
 
     /**
-     * Test GET request to admin route
+     * Test GET request to admin route (legacy redirect to dashboard)
      */
     public function test_get_admin_route(): void
     {
         $response = $this->get('/admin');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/dashboard/admin');
     }
 
     /**
-     * Test GET request to user route
+     * Test GET request to user route (legacy redirect to dashboard)
      */
     public function test_get_user_route(): void
     {
         $response = $this->get('/user');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/dashboard/user');
     }
 
     /**
-     * Test GET request to login route
+     * Test GET request to login route (legacy redirect to auth login)
      */
     public function test_get_login_route(): void
     {
         $response = $this->get('/login');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/auth/login');
     }
 
     /**
@@ -88,14 +91,13 @@ class HttpRequestTest extends TestCase
     }
 
     /**
-     * Test index route through UserController
+     * Test index route through UserController (legacy redirect to home)
      */
     public function test_user_controller_index_through_route(): void
     {
         $response = $this->get('/index');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertRedirect('/');
     }
 
     /**
@@ -103,21 +105,21 @@ class HttpRequestTest extends TestCase
      */
     public function test_route_with_authenticated_user(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'user']);
 
-        $response = $this->actingAs($user)->get('/user');
+        $response = $this->actingAs($user)->get('/dashboard/user');
 
         $response->assertStatus(200);
     }
 
     /**
-     * Test route without authentication
+     * Test route without authentication redirects to login
      */
     public function test_route_without_authentication(): void
     {
-        $response = $this->get('/user');
+        $response = $this->get('/dashboard/user');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/auth/login');
     }
 
     /**
@@ -136,8 +138,8 @@ class HttpRequestTest extends TestCase
      */
     public function test_route_response_view_is_properly_set(): void
     {
-        $response = $this->get('/login');
+        $response = $this->get('/auth/login');
 
-        $response->assertViewIs('login');
+        $response->assertViewIs('auth.login');
     }
 }

@@ -695,30 +695,37 @@
                 </div>
 
                 <div class="contact-right">
-                    <form class="contact-form">
+                    <form class="contact-form" id="contactForm" onsubmit="handleContactSubmit(event)">
                         <h4>Kirim Pesan</h4>
+
+                        <div id="contactAlert" style="display: none; margin-bottom: 15px; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;"></div>
 
                         <div class="form-group">
                             <label>Nama Lengkap</label>
-                            <input type="text" placeholder="Masukkan nama Anda">
+                            <input type="text" id="contactName" name="name" placeholder="Masukkan nama Anda" required>
                         </div>
 
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" placeholder="contoh@email.com">
+                            <input type="email" id="contactEmail" name="email" placeholder="contoh@email.com" required>
                         </div>
 
                         <div class="form-group">
                             <label>Nomor Telepon</label>
-                            <input type="tel" placeholder="+62 812 5678 9000">
+                            <input type="tel" id="contactPhone" name="phone" placeholder="+62 812 5678 9000" required>
                         </div>
 
                         <div class="form-group">
                             <label>Pesan</label>
-                            <textarea placeholder="Tulis pesan Anda di sini..." rows="4"></textarea>
+                            <textarea id="contactMessage" name="message" placeholder="Tulis pesan Anda di sini..." rows="4" required></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary full-width">Kirim Pesan</button>
+                        <button type="submit" class="btn btn-primary full-width" id="contactSubmitBtn">
+                            <span id="contactSubmitText">Kirim Pesan</span>
+                            <span id="contactSubmitSpinner" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Mengirim...
+                            </span>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -846,31 +853,9 @@
             });
 
             // ============================================
-            // FORM HANDLING
+            // CONTACT FORM HANDLER (didefinisikan global)
             // ============================================
-            const contactForm = document.querySelector('.contact-form');
-
-            if (contactForm) {
-                contactForm.addEventListener('submit', function (e) {
-                    e.preventDefault();
-
-                    const formData = {
-                        nama: document.querySelector('.contact-form input[type="text"]').value,
-                        email: document.querySelector('.contact-form input[type="email"]').value,
-                        telepon: document.querySelector('.contact-form input[type="tel"]').value,
-                        pesan: document.querySelector('.contact-form textarea').value
-                    };
-
-                    if (!formData.nama || !formData.email || !formData.telepon || !formData.pesan) {
-                        alert('Mohon lengkapi semua field!');
-                        return;
-                    }
-
-                    console.log('Form Data:', formData);
-                    alert('Terima kasih! Pesan Anda telah dikirim. Kami akan segera menghubungi Anda.');
-                    contactForm.reset();
-                });
-            }
+            // handleContactSubmit() didefinisikan di bawah dengan fungsi global
 
             // ============================================
             // BUTTON ANIMATIONS
@@ -1189,6 +1174,95 @@
         function removeTypingIndicator() {
             const indicator = document.getElementById('typingIndicator');
             if (indicator) indicator.remove();
+        }
+    </script>
+
+    <script>
+        // ============================================
+        // CONTACT FORM BACKEND HANDLER
+        // ============================================
+        async function handleContactSubmit(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('contactForm');
+            const alert = document.getElementById('contactAlert');
+            const submitBtn = document.getElementById('contactSubmitBtn');
+            const submitText = document.getElementById('contactSubmitText');
+            const submitSpinner = document.getElementById('contactSubmitSpinner');
+
+            const name    = document.getElementById('contactName').value.trim();
+            const email   = document.getElementById('contactEmail').value.trim();
+            const phone   = document.getElementById('contactPhone').value.trim();
+            const message = document.getElementById('contactMessage').value.trim();
+
+            if (!name || !email || !phone || !message) {
+                alert.style.display = 'block';
+                alert.style.background = '#FEE2E2';
+                alert.style.color = '#7F1D1D';
+                alert.textContent = 'Mohon lengkapi semua field!';
+                alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                alert.style.display = 'block';
+                alert.style.background = '#FEE2E2';
+                alert.style.color = '#7F1D1D';
+                alert.textContent = 'Format email tidak valid.';
+                alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // Show loading
+            submitBtn.disabled = true;
+            submitText.style.display = 'none';
+            submitSpinner.style.display = 'inline';
+            alert.style.display = 'none';
+
+            try {
+                const response = await fetch('{{ route("contact.send") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert.style.display = 'block';
+                    alert.style.background = '#D1FAE5';
+                    alert.style.color = '#065F46';
+                    alert.textContent = data.message;
+                    form.reset();
+                } else {
+                    alert.style.display = 'block';
+                    alert.style.background = '#FEE2E2';
+                    alert.style.color = '#7F1D1D';
+                    alert.textContent = data.message || 'Gagal mengirim pesan.';
+                }
+            } catch (error) {
+                console.error('Contact form error:', error);
+                alert.style.display = 'block';
+                alert.style.background = '#FEE2E2';
+                alert.style.color = '#7F1D1D';
+                alert.textContent = 'Terjadi kesalahan. Silakan coba lagi nanti.';
+            } finally {
+                submitBtn.disabled = false;
+                submitText.style.display = 'inline';
+                submitSpinner.style.display = 'none';
+                if (alert.style.display === 'block') {
+                    alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
         }
     </script>
 </body>

@@ -120,7 +120,22 @@
                                             <span class="badge success">Aktif</span>
                                         @endif
                                     </td>
-                                    <td><button class="action-btn"><i class="fas fa-ellipsis-v"></i></button></td>
+                                    <td>
+                                        <button class="action-btn" title="Edit"
+                                            onclick='openEditTenantModal({{ json_encode([
+                                                'id' => $tenant->id,
+                                                'user_name' => $tenant->user?->name,
+                                                'room_id' => $tenant->room_id,
+                                                'room_number' => $tenant->room?->number,
+                                                'phone' => $tenant->phone,
+                                                'lease_start' => $tenant->lease_start?->toDateString(),
+                                                'lease_end' => $tenant->lease_end?->toDateString(),
+                                                'identity_number' => $tenant->identity_number,
+                                                'address' => $tenant->address,
+                                            ]) }})'>
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

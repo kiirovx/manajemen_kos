@@ -971,18 +971,22 @@
         // PAGE NAVIGATION
         // ============================================
         function showUserPage(pageName) {
+            const targetPage = document.getElementById(pageName);
+            if (!targetPage) return;
+
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
             });
 
-            document.getElementById(pageName).classList.add('active');
+            targetPage.classList.add('active');
 
             document.querySelectorAll('.user-menu-item').forEach(item => {
                 item.classList.remove('active');
             });
 
-            if (event && event.target) {
-                event.target.closest('.user-menu-item').classList.add('active');
+            const activeNav = document.querySelector(`.user-menu-item[onclick*="${pageName}"]`);
+            if (activeNav) {
+                activeNav.classList.add('active');
             }
 
             // Close sidebar on mobile
@@ -992,6 +996,9 @@
             }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (window.location.hash !== `#${pageName}`) {
+                history.replaceState(null, '', `#${pageName}`);
+            }
         }
 
         // ============================================

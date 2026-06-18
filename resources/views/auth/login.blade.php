@@ -118,22 +118,6 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .remember-forgot {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            margin-bottom: 25px;
-        }
-
-        .remember-forgot a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .remember-forgot a:hover {
-            text-decoration: underline;
-        }
 
         .checkbox-wrapper {
             display: flex;
@@ -384,13 +368,7 @@
                         autocomplete="current-password">
                 </div>
 
-                <div class="remember-forgot">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="remember" name="remember">
-                        <label for="remember" style="margin: 0; cursor: pointer;">Ingat saya</label>
-                    </div>
-                    <a href="#forgot-password">Lupa password?</a>
-                </div>
+
 
                 <button type="submit" class="login-btn" id="loginBtn">
                     <span class="spinner loading" id="spinner"></span>

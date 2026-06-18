@@ -4,19 +4,22 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\cr;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class IntegrationTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * Test user can access login page
      */
     public function test_user_can_access_login_page(): void
     {
-        $response = $this->get('/login');
+        $response = $this->get('/auth/login');
 
         $response->assertStatus(200);
-        $response->assertViewIs('login');
+        $response->assertViewIs('auth.login');
     }
 
     /**
@@ -27,7 +30,7 @@ class IntegrationTest extends TestCase
         $response = $this->get('/booking');
 
         $response->assertStatus(200);
-        $response->assertViewIs('booking');
+        $response->assertViewIs('booking.booking');
     }
 
     /**
@@ -35,10 +38,12 @@ class IntegrationTest extends TestCase
      */
     public function test_admin_dashboard_is_accessible(): void
     {
-        $response = $this->get('/admin');
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->get('/dashboard/admin');
 
         $response->assertStatus(200);
-        $response->assertViewIs('admin.admin-dashboard');
+        $response->assertViewIs('dashboard.admin.admin');
     }
 
     /**
@@ -46,23 +51,22 @@ class IntegrationTest extends TestCase
      */
     public function test_user_dashboard_displays_for_authenticated_user(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'user']);
 
-        $response = $this->actingAs($user)->get('/user');
+        $response = $this->actingAs($user)->get('/dashboard/user');
 
         $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertViewIs('dashboard.user.user');
     }
 
     /**
-     * Test index page displays user dashboard via controller
+     * Test index page redirects to home (legacy redirect)
      */
     public function test_index_page_displays_user_dashboard_via_controller(): void
     {
         $response = $this->get('/index');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertRedirect('/');
     }
 
     /**

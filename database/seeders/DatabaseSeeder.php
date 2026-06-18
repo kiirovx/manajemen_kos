@@ -19,14 +19,14 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin User',
             'email' => 'admin@gmail.com',
             'role' => 'admin',
-            'password' => bcrypt('admin123'),
+            'password' => bcrypt('password'),
         ]);
 
         User::factory()->create([
             'name' => 'Regular User',
             'email' => 'user@gmail.com',
             'role' => 'user',
-            'password' => bcrypt('user123'),
+            'password' => bcrypt('password'),
         ]);
 
         $this->call(KosKitaSeeder::class);

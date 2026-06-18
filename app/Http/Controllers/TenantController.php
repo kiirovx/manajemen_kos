@@ -15,9 +15,11 @@ class TenantController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'user_id' => [
+                'required',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'user')),
+                Rule::unique('tenant_profiles', 'user_id'),
+            ],
             'phone' => ['required', 'string', 'max:30'],
             'room_id' => [
                 'required',
@@ -27,6 +29,8 @@ class TenantController extends Controller
             'lease_end' => ['nullable', 'date', 'after_or_equal:lease_start'],
             'identity_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'user_id.unique' => 'Pengguna ini sudah terdaftar sebagai penyewa.',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -35,12 +39,9 @@ class TenantController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => $validated['password'],
-                'role' => 'user',
-            ]);
+            $user = User::whereKey($validated['user_id'])
+                ->where('role', 'user')
+                ->firstOrFail();
 
             TenantProfile::create([
                 'user_id' => $user->id,
@@ -65,5 +66,44 @@ class TenantController extends Controller
 
         return redirect(route('dashboard.admin') . '#manajemen-penyewa')
             ->with('success', 'Penyewa berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, TenantProfile $tenant)
+    {
+        $validated = $request->validate([
+            'phone' => ['required', 'string', 'max:30'],
+            'room_id' => [
+                'required',
+                Rule::exists('rooms', 'id')->where(function ($query) use ($tenant) {
+                    $query->where('status', 'available')->orWhere('id', $tenant->room_id);
+                }),
+            ],
+            'lease_start' => ['required', 'date'],
+            'lease_end' => ['nullable', 'date', 'after_or_equal:lease_start'],
+            'identity_number' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        DB::transaction(function () use ($validated, $tenant) {
+            $oldRoomId = $tenant->room_id;
+            $newRoomId = (int) $validated['room_id'];
+
+            $tenant->update([
+                'phone' => $validated['phone'],
+                'room_id' => $newRoomId,
+                'identity_number' => $validated['identity_number'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'lease_start' => $validated['lease_start'],
+                'lease_end' => $validated['lease_end'] ?? null,
+            ]);
+
+            if ($newRoomId !== (int) $oldRoomId) {
+                Room::whereKey($oldRoomId)->update(['status' => 'available']);
+                Room::whereKey($newRoomId)->update(['status' => 'occupied']);
+            }
+        });
+
+        return redirect(route('dashboard.admin') . '#manajemen-penyewa')
+            ->with('success', 'Data penyewa berhasil diperbarui.');
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/booking', [BookingController::class, 'index'])->name('booking');
 Route::post('/chatbot/send', [ChatbotController::class, 'send'])->name('chatbot.send');
+Route::post('/contact/send', [MessageController::class, 'store'])->name('contact.send');
 
 /*
 |--------------------------------------------------------------------------
@@ -79,10 +81,13 @@ Route::middleware(['auth', 'role:admin'])
     ->group(function () {
         Route::get('/', [DashboardController::class, 'adminDashboard'])->name('dashboard.admin');
         Route::post('/rooms', [RoomController::class, 'store'])->name('admin.rooms.store');
+        Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('admin.rooms.update');
         Route::post('/tenants', [TenantController::class, 'store'])->name('admin.tenants.store');
-        Route::post('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.update-status');
+        Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->name('admin.tenants.update');
         Route::post('/maintenance/{maintenance}/status', [MaintenanceController::class, 'updateStatus'])->name('admin.maintenance.update-status');
         Route::post('/notifications/send', [NotificationController::class, 'send'])->name('admin.notifications.send');
+        Route::post('/messages/{message}/read', [MessageController::class, 'markRead'])->name('admin.messages.read');
+        Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('admin.messages.destroy');
     });
 
 Route::get('/debug-auth', function () {

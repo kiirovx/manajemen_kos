@@ -103,7 +103,19 @@
                                     <td>{{ $room->tenantProfiles->first()?->user?->name ?? '-' }}</td>
                                     <td>Rp {{ number_format((float) $room->price, 0, ',', '.') }}</td>
                                     <td>{{ $room->floor }}</td>
-                                    <td><button class="action-btn" title="Edit"><i class="fas fa-edit"></i></button></td>
+                                    <td>
+                                        <button class="action-btn" title="Edit"
+                                            onclick='openEditRoomModal({{ json_encode([
+                                                'id' => $room->id,
+                                                'number' => $room->number,
+                                                'type' => $room->type,
+                                                'price' => (float) $room->price,
+                                                'floor' => $room->floor,
+                                                'status' => $room->status,
+                                            ]) }})'>
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin Dashboard - KosKita</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -684,7 +685,7 @@
                 z-index: 1002;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             }
 
             .sidebar.show {
@@ -809,6 +810,12 @@
                 <i class="fas fa-chart-line"></i>
                 Laporan Keuangan
             </button>
+            <button class="nav-item" onclick="showPage('inbox')">
+                <i class="fas fa-inbox"></i>
+                Inbox
+                <span id="unreadBadge"
+                    style="display: none; background: #EF4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: auto;">0</span>
+            </button>
         </div>
 
         <div class="sidebar-divider"></div>
@@ -829,7 +836,8 @@
             <form action="{{ route('logout') }}" method="POST" id="logoutForm" style="display: none;">
                 @csrf
             </form>
-            <button class="logout-btn" onclick="event.preventDefault(); localStorage.removeItem('currentUser'); document.getElementById('logoutForm').submit();">
+            <button class="logout-btn"
+                onclick="event.preventDefault(); localStorage.removeItem('currentUser'); document.getElementById('logoutForm').submit();">
                 <i class="fas fa-sign-out-alt"></i>
                 Keluar
             </button>
@@ -838,11 +846,12 @@
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
-                @include('dashboard.admin.dashboard')
+        @include('dashboard.admin.dashboard')
         @include('dashboard.admin.kamar')
         @include('dashboard.admin.penyewa')
         @include('dashboard.admin.keuangan')
         @include('dashboard.admin.pengaturan')
+        @include('dashboard.admin.inbox')
     </div>
 
     @include('dashboard.admin.modals')
@@ -974,13 +983,13 @@
         // ============================================
         // INITIALIZE
         // ============================================
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const adminData = checkAdminAuth();
             if (!adminData) return;
 
-            const adminNameEl  = document.getElementById('adminName');
+            const adminNameEl = document.getElementById('adminName');
             const adminEmailEl = document.getElementById('adminEmail');
-            if (adminNameEl)  adminNameEl.textContent  = adminData.name;
+            if (adminNameEl) adminNameEl.textContent = adminData.name;
             if (adminEmailEl) adminEmailEl.textContent = adminData.email;
 
             const initialPage = window.location.hash.replace('#', '');
@@ -1003,13 +1012,13 @@
 
             // Close modals when clicking outside
             document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('click', function(e) {
+                modal.addEventListener('click', function (e) {
                     if (e.target === this) this.classList.remove('show');
                 });
             });
 
             // Close modals with Escape key
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') {
                     document.querySelectorAll('.modal.show').forEach(modal => {
                         modal.classList.remove('show');
@@ -1019,7 +1028,7 @@
 
             // Search box keyup handler
             document.querySelectorAll('.search-box').forEach(searchBox => {
-                searchBox.addEventListener('keyup', function() {
+                searchBox.addEventListener('keyup', function () {
                     console.log('Search:', this.value);
                 });
             });

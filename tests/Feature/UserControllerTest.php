@@ -4,32 +4,34 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\cr;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class UserControllerTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
-     * Test UserController index method displays user dashboard
+     * Test legacy /index route redirects to home
      */
     public function test_index_returns_user_dashboard_view(): void
     {
         $response = $this->get('/index');
 
-        $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertRedirect('/');
     }
 
     /**
-     * Test UserController index method with authenticated user
+     * Test authenticated user dashboard renders
      */
     public function test_index_with_authenticated_user(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'user']);
 
-        $response = $this->actingAs($user)->get('/index');
+        $response = $this->actingAs($user)->get('/dashboard/user');
 
         $response->assertStatus(200);
-        $response->assertViewIs('user.user-dashboard');
+        $response->assertViewIs('dashboard.user.user');
     }
 
     /**

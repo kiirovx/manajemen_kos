@@ -26,4 +26,24 @@ class RoomController extends Controller
         return redirect(route('dashboard.admin') . '#manajemen-kamar')
             ->with('success', 'Kamar berhasil ditambahkan.');
     }
+
+    public function update(Request $request, Room $room)
+    {
+        $request->merge([
+            'type' => strtolower((string) $request->input('type')),
+        ]);
+
+        $validated = $request->validate([
+            'number' => ['required', 'string', 'max:255', Rule::unique('rooms', 'number')->ignore($room->id)],
+            'type' => ['required', 'string', Rule::in(['standard', 'deluxe', 'premium'])],
+            'price' => ['required', 'numeric', 'min:0'],
+            'floor' => ['required', 'integer', 'min:1'],
+            'status' => ['required', 'string', Rule::in(['available', 'occupied', 'maintenance'])],
+        ]);
+
+        $room->update($validated);
+
+        return redirect(route('dashboard.admin') . '#manajemen-kamar')
+            ->with('success', 'Kamar berhasil diperbarui.');
+    }
 }
