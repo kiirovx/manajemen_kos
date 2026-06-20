@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Notification;
+use Illuminate\Support\Facades\Auth;
+
+class NotificationController extends Controller
+{
+    public function markAllRead()
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Semua notifikasi ditandai sebagai dibaca.',
+        ]);
+    }
+
+    public function send()
+    {
+        $user = Auth::user();
+
+        $notification = Notification::create([
+            'user_id' => $user->id,
+            'message' => 'Ini adalah notifikasi baru untuk Anda.',
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi berhasil dikirim.',
+            'data' => $notification,
+        ]);
+    }
+}
