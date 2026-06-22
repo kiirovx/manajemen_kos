@@ -494,8 +494,9 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
+            padding: 20px;
         }
 
         .modal.show {
@@ -531,7 +532,8 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #E0E0E0;
@@ -541,10 +543,16 @@
         }
 
         .form-group input:focus,
-        .form-group select:focus {
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
         }
 
         .modal-footer {
@@ -583,6 +591,386 @@
 
         .btn-submit:hover {
             background: #5568d3;
+        }
+
+        /* ENHANCED EDIT ROOM MODAL */
+        .modal--edit-room {
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content--edit-room {
+            max-width: 700px;
+            width: 95%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header--sticky {
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 24px 28px 20px 28px;
+            margin-bottom: 0;
+            border-bottom: 1px solid #E5E7EB;
+            background: white;
+            border-radius: 16px 16px 0 0;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .modal-header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .modal-header-subtitle {
+            font-size: 13px;
+            color: #6B7280;
+            font-weight: 400;
+        }
+
+        .modal-close-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            background: #F3F4F6;
+            color: #6B7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .modal-close-btn:hover {
+            background: #E5E7EB;
+            color: #111827;
+        }
+
+        .modal-body--scrollable {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 24px 28px;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+        }
+
+        .modal-body--scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-body--scrollable::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .modal-body--scrollable::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 3px;
+        }
+
+        .modal-body--scrollable::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
+        }
+
+        /* FORM SECTIONS */
+        .form-section {
+            margin-bottom: 28px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .form-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .form-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .form-section-header i {
+            width: 32px;
+            height: 32px;
+            background: #EEF2FF;
+            color: #667eea;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* FORM GRID */
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .required-mark {
+            color: #EF4444;
+            font-weight: 700;
+        }
+
+        /* PHOTO UPLOAD AREA */
+        .photo-upload-area {
+            border: 2px dashed #D1D5DB;
+            border-radius: 8px;
+            padding: 16px;
+            background: #FAFAFA;
+            transition: border-color 0.2s;
+        }
+
+        .photo-upload-area:focus-within {
+            border-color: #667eea;
+            background: #F5F7FF;
+        }
+
+        .photo-upload-area input {
+            border: 1px solid #E0E0E0;
+            background: white;
+        }
+
+        /* STICKY FOOTER */
+        .modal-footer--sticky {
+            position: sticky;
+            bottom: 0;
+            padding: 16px 28px;
+            border-top: 1px solid #E5E7EB;
+            background: white;
+            margin-top: 0;
+            border-radius: 0 0 16px 16px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .modal-footer--sticky .btn-cancel,
+        .modal-footer--sticky .btn-submit {
+            padding: 10px 24px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+        }
+
+        /* EDIT ROOM FORM */
+        .edit-room-form {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ========================================== */
+        /* ADD ROOM MODAL */
+        /* ========================================== */
+        .modal--add-room {
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content--add-room {
+            max-width: 1000px;
+            width: 95%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .add-room-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* FORM SECTION CARD */
+        .form-section-card {
+            background: #FAFBFC;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+
+        .form-section-card:hover {
+            border-color: #D1D5DB;
+        }
+
+        /* PRICE INPUT */
+        .input-price-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid #E0E0E0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-price-wrapper:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-price-prefix {
+            padding: 10px 14px;
+            background: #F5F5F7;
+            color: #666;
+            font-weight: 600;
+            font-size: 13px;
+            border-right: 1px solid #E0E0E0;
+            white-space: nowrap;
+        }
+
+        .input-price {
+            flex: 1;
+            border: none !important;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            border-radius: 0 !important;
+        }
+
+        .input-price:focus {
+            box-shadow: none !important;
+            border-color: transparent !important;
+        }
+
+        /* STATUS RADIO CARDS */
+        .status-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-radio-card {
+            display: block;
+            cursor: pointer;
+        }
+
+        .status-radio-card input[type="radio"] {
+            display: none;
+        }
+
+        .status-radio-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .status-radio-content i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .status-radio-content strong {
+            display: block;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .status-radio-content small {
+            font-size: 11px;
+            color: #9CA3AF;
+        }
+
+        .status-radio-card input[type="radio"]:checked + .status-radio-content {
+            border-color: #667eea;
+            background: #EEF2FF;
+        }
+
+        .status-radio-card:hover .status-radio-content {
+            border-color: #D1D5DB;
+        }
+
+        /* PHOTO UPLOAD AREA - HOVER */
+        .photo-upload-area:hover {
+            border-color: #667eea;
+            background: #F5F7FF;
+        }
+
+        /* FORM VALIDATION */
+        .form-group input.is-invalid,
+        .form-group select.is-invalid,
+        .form-group textarea.is-invalid {
+            border-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .form-error {
+            color: #EF4444;
+            font-size: 11px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+
+        /* ADD ROOM MODAL RESPONSIVE */
+        @media (max-width: 900px) {
+            .add-room-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .modal-content--add-room {
+                max-width: 95vw;
+                width: 95vw;
+                max-height: 90vh;
+                border-radius: 12px;
+            }
+
+            .modal--add-room {
+                padding: 8px;
+            }
         }
 
         /* TABLE RESPONSIVE */
@@ -668,6 +1056,69 @@
         .sidebar-overlay.show {
             display: block;
             opacity: 1;
+        }
+
+        /* EDIT ROOM MODAL RESPONSIVE */
+        @media (max-width: 768px) {
+            .modal--edit-room {
+                padding: 8px;
+            }
+
+            .modal-content--edit-room {
+                max-width: 95vw;
+                width: 95vw;
+                max-height: 90vh;
+                border-radius: 12px;
+            }
+
+            .modal-header--sticky {
+                padding: 16px 20px 14px 20px;
+            }
+
+            .modal-header-title {
+                font-size: 17px;
+            }
+
+            .modal-header-subtitle {
+                font-size: 12px;
+            }
+
+            .modal-body--scrollable {
+                padding: 16px 20px;
+            }
+
+            .modal-footer--sticky {
+                padding: 12px 20px;
+                flex-wrap: wrap;
+            }
+
+            .modal-footer--sticky .btn-cancel,
+            .modal-footer--sticky .btn-submit {
+                flex: 1;
+                justify-content: center;
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .form-section {
+                margin-bottom: 20px;
+                padding-bottom: 20px;
+            }
+
+            .form-section-header {
+                font-size: 13px;
+            }
+
+            .form-section-header i {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
         }
 
         /* RESPONSIVE */
@@ -802,6 +1253,13 @@
                 <i class="fas fa-door-open"></i>
                 Manajemen Kamar
             </button>
+            <button class="nav-item" onclick="showPage('booking-review')">
+                <i class="fas fa-clipboard-check"></i>
+                Booking Baru
+                @if($pendingReviewCount > 0)
+                    <span style="background: #EF4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: auto;">{{ $pendingReviewCount }}</span>
+                @endif
+            </button>
             <button class="nav-item" onclick="showPage('manajemen-penyewa')">
                 <i class="fas fa-users"></i>
                 Manajemen Penyewa
@@ -852,6 +1310,7 @@
         @include('dashboard.admin.keuangan')
         @include('dashboard.admin.pengaturan')
         @include('dashboard.admin.inbox')
+        @include('dashboard.admin.booking-review')
     </div>
 
     @include('dashboard.admin.modals')

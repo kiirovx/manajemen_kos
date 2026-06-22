@@ -6,6 +6,8 @@
     <title>Booking Kamar - KosKita</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
     <style>
         /* BOOKING PAGE STYLES */
         .btn-back-clean {
@@ -570,44 +572,44 @@
 
     <script>
         // ============================================
+        // AUTH CHECK & REDIRECT SETUP
+        // ============================================
+        const IS_AUTHENTICATED = @json(auth()->check());
+        const LOGIN_URL = @json(route('login.page'));
+        const BOOKING_URL = @json(route('booking'));
+
+        // ============================================
         // BOOKING DATA & STATE
         // ============================================
+        // Restore booking data from localStorage (jika user kembali dari login)
+        let savedBookingData = null;
+        try {
+            const stored = localStorage.getItem('koskita_booking_data');
+            if (stored) {
+                savedBookingData = JSON.parse(stored);
+                localStorage.removeItem('koskita_booking_data');
+            }
+        } catch (e) {
+            // ignore parse error
+        }
+
+        // Flag: apakah login berasal dari proses booking?
+        const returnFromLogin = sessionStorage.getItem('koskita_booking_return');
+        if (returnFromLogin) {
+            sessionStorage.removeItem('koskita_booking_return');
+        }
+
         const bookingData = {
-            selectedRoom: null,
-            customerName: '',
-            customerEmail: '',
-            customerPhone: '',
-            customerMessage: '',
-            paymentMethod: null,
+            selectedRoom: savedBookingData?.selectedRoom || null,
+            customerName: savedBookingData?.customerName || '',
+            customerEmail: savedBookingData?.customerEmail || '',
+            customerPhone: savedBookingData?.customerPhone || '',
+            customerMessage: savedBookingData?.customerMessage || '',
+            paymentMethod: savedBookingData?.paymentMethod || null,
             currentStep: 1
         };
 
-        const rooms = [
-            {
-                id: 1,
-                name: 'Kamar Standard',
-                price: 300000,
-                priceText: 'Rp 300k',
-                size: 'Ukuran 3x4 m',
-                capacity: 'Kapasitas 1 orang',
-                image: '{{ asset('asset/kamar.png') }}',
-                bathroom: 'Kamar Mandi Luar',
-                badge: 'New',
-                badgeClass: 'room-tag'
-            },
-            {
-                id: 2,
-                name: 'Kamar Deluxe',
-                price: 550000,
-                priceText: 'Rp 550k',
-                size: 'Ukuran 4x5 m',
-                capacity: 'Kapasitas 1 orang',
-                image: '{{ asset('asset/kamar.png') }}',
-                bathroom: 'Kamar Mandi Dalam',
-                badge: 'Popular',
-                badgeClass: 'room-tag featured'
-            },
-        ];
+        const rooms = @json($rooms);
 
         // ============================================
         // UPDATE SELECTED ROOM DISPLAY
@@ -697,11 +699,45 @@
         }
 
         // ============================================
-        // MODAL FUNCTIONS
+        // AUTH CHECK BEFORE PAYMENT
         // ============================================
+        function redirectToLogin() {
+            // Simpan booking data ke localStorage agar tidak hilang setelah login
+            try {
+                const dataToSave = {
+                    selectedRoom: bookingData.selectedRoom,
+                    customerName: bookingData.customerName,
+                    customerEmail: bookingData.customerEmail,
+                    customerPhone: bookingData.customerPhone,
+                    customerMessage: bookingData.customerMessage,
+                    paymentMethod: bookingData.paymentMethod,
+                };
+                localStorage.setItem('koskita_booking_data', JSON.stringify(dataToSave));
+                sessionStorage.setItem('koskita_booking_return', '1');
+            } catch (e) {
+                // ignore storage errors
+            }
+
+            // Redirect ke login dengan parameter redirect_to ke halaman booking
+            window.location.href = LOGIN_URL + '?redirect_to=' + encodeURIComponent(BOOKING_URL);
+        }
+
+        // ============================================
+        // LOADING MODAL FUNCTIONS
+        // ============================================
+        let loadingModalEl = null;
+
         function showLoadingModal() {
+            // Hapus modal loading sebelumnya (jika ada)
+            if (loadingModalEl) {
+                loadingModalEl.remove();
+                loadingModalEl = null;
+            }
+
             const modal = document.createElement('div');
             modal.id = 'loadingModal';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-label', 'Memproses pembayaran');
             modal.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -713,19 +749,22 @@
                 align-items: center;
                 justify-content: center;
                 z-index: 10000;
+                backdrop-filter: blur(3px);
+                animation: fadeIn 0.2s ease-out;
             `;
 
             modal.innerHTML = `
-                <div style="background: white; border-radius: 12px; padding: 40px; text-align: center; max-width: 400px;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">
+                <div style="background: white; border-radius: 12px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: #5B5EFF;">
                         <i class="fas fa-spinner" style="animation: spin 1s linear infinite;"></i>
                     </div>
-                    <h3 style="margin-bottom: 10px; color: #333;">Memproses Pembayaran...</h3>
-                    <p style="color: #666; font-size: 14px;">Mohon tunggu sebentar</p>
+                    <h3 style="margin-bottom: 10px; color: #333;">Sedang Memproses...</h3>
+                    <p style="color: #666; font-size: 14px;">Menghubungkan ke Midtrans. Mohon tunggu sebentar.</p>
                 </div>
             `;
 
             document.body.appendChild(modal);
+            loadingModalEl = modal;
 
             const style = document.createElement('style');
             style.textContent = `
@@ -737,13 +776,25 @@
         }
 
         function hideLoadingModal() {
-            const modal = document.getElementById('loadingModal');
-            if (modal) modal.remove();
+            if (loadingModalEl) {
+                loadingModalEl.style.animation = 'fadeOut 0.2s ease-out';
+                setTimeout(() => {
+                    if (loadingModalEl) {
+                        loadingModalEl.remove();
+                        loadingModalEl = null;
+                    }
+                }, 200);
+            }
+            // Hapus juga jika dibuat oleh kode lain
+            const fallback = document.getElementById('loadingModal');
+            if (fallback) fallback.remove();
         }
 
         function showSuccessModal() {
             const modal = document.createElement('div');
             modal.id = 'successModal';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-label', 'Booking berhasil');
             modal.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -755,26 +806,28 @@
                 align-items: center;
                 justify-content: center;
                 z-index: 10000;
+                backdrop-filter: blur(3px);
+                animation: fadeIn 0.3s ease-out;
             `;
 
             const room = bookingData.selectedRoom;
 
             modal.innerHTML = `
-                <div style="background: white; border-radius: 12px; padding: 40px; text-align: center; max-width: 500px;">
+                <div style="background: white; border-radius: 12px; padding: 40px; text-align: center; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                     <div style="font-size: 60px; color: #10B981; margin-bottom: 20px;">
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <h2 style="margin-bottom: 10px; color: #333;">Booking Berhasil!</h2>
                     <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                        Terima kasih telah memesan <strong>${room.name}</strong>
+                        Terima kasih telah memesan <strong>${room ? room.name : 'Kamar'}</strong>
                     </p>
                     
                     <div style="background: #F0F0F7; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left; font-size: 13px;">
                         <p style="margin: 5px 0;"><strong>Nama:</strong> ${bookingData.customerName}</p>
                         <p style="margin: 5px 0;"><strong>Email:</strong> ${bookingData.customerEmail}</p>
                         <p style="margin: 5px 0;"><strong>Telepon:</strong> ${bookingData.customerPhone}</p>
-                        <p style="margin: 5px 0;"><strong>Kamar:</strong> ${room.name}</p>
-                        <p style="margin: 5px 0;"><strong>Harga:</strong> ${formatPrice(room.price)}/bulan</p>
+                        <p style="margin: 5px 0;"><strong>Kamar:</strong> ${room ? room.name : '-'}</p>
+                        <p style="margin: 5px 0;"><strong>Harga:</strong> ${room ? formatPrice(room.price) : '-'}/bulan</p>
                         <p style="margin: 5px 0;"><strong>Metode Pembayaran:</strong> ${getPaymentMethodName(bookingData.paymentMethod)}</p>
                     </div>
 
@@ -810,6 +863,129 @@
         function cancelBooking() {
             if (confirm('Apakah Anda yakin ingin membatalkan booking ini?')) {
                 window.location.href = HOME_URL;
+            }
+        }
+
+        // ============================================
+        // PROCESS PAYMENT (Kirim data ke server + Midtrans)
+        // ============================================
+        async function processPayment() {
+            // Cek autentikasi SEBELUM mengirim request
+            if (!IS_AUTHENTICATED) {
+                redirectToLogin();
+                return;
+            }
+
+            if (!bookingData.paymentMethod) {
+                showNotification('Silakan pilih metode pembayaran', 'error');
+                return;
+            }
+
+            if (!bookingData.selectedRoom) {
+                showNotification('Silakan pilih kamar terlebih dahulu', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnPayNow');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Memproses...';
+            showLoadingModal();
+
+            const requestBody = {
+                customer_name: bookingData.customerName,
+                customer_email: bookingData.customerEmail,
+                customer_phone: bookingData.customerPhone,
+                customer_message: bookingData.customerMessage,
+                room_name: bookingData.selectedRoom.name,
+                room_price: bookingData.selectedRoom.price,
+                room_id: bookingData.selectedRoom.id,
+                payment_method: bookingData.paymentMethod,
+            };
+
+            console.log('Booking request payload:', JSON.stringify(requestBody));
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                const response = await fetch('{{ route("booking.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+
+                hideLoadingModal();
+
+                // Handle 401/403 — session mungkin expired
+                if (response.status === 401 || response.status === 403) {
+                    redirectToLogin();
+                    return;
+                }
+
+                // CRITICAL: Cek HTTP status SEBELUM parse JSON
+                if (!response.ok) {
+                    let errMsg = 'Server error (HTTP ' + response.status + ')';
+                    try {
+                        // Coba parse sebagai JSON terlebih dahulu
+                        const errData = await response.json();
+                        if (errData.message) errMsg = errData.message;
+                        console.error('Server error (JSON):', errData);
+                    } catch (jsonErr) {
+                        // Response bukan JSON (mungkin HTML error page dari Laravel)
+                        try {
+                            const text = await response.clone().text();
+                            console.error('Server response (non-JSON, first 800 chars):', text.substring(0, 800));
+                        } catch (textErr) {
+                            console.error('Cannot read response body:', textErr);
+                        }
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 8px;"></i> Bayar Sekarang';
+                    showNotification('Gagal: ' + errMsg, 'error');
+                    return;
+                }
+
+                // Response sukses — parse JSON
+                const result = await response.json();
+                console.log('Booking response:', result);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 8px;"></i> Bayar Sekarang';
+
+                if (result.success) {
+                    if (bookingData.paymentMethod === 'midtrans' && result.snap_token) {
+                        // Buka Snap popup Midtrans
+                        window.snap.pay(result.snap_token, {
+                            onSuccess: function(paymentResult) {
+                                window.location.href = result.redirect_url;
+                            },
+                            onPending: function(paymentResult) {
+                                window.location.href = result.redirect_url;
+                            },
+                            onError: function(paymentResult) {
+                                showNotification('Pembayaran gagal. Status: ' + (paymentResult.status_message || 'Silakan coba lagi.'), 'error');
+                                console.error('Midtrans snap error:', paymentResult);
+                            },
+                            onClose: function() {
+                                showNotification('Popup pembayaran ditutup. Silakan buka kembali untuk melanjutkan.', 'error');
+                            },
+                        });
+                    } else {
+                        showSuccessModal();
+                    }
+                } else {
+                    // Server mengembalikan success=false
+                    showNotification(result.message || 'Gagal memproses booking. Silakan coba lagi.', 'error');
+                    console.error('Booking failed (success=false):', result);
+                }
+            } catch (error) {
+                hideLoadingModal();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 8px;"></i> Bayar Sekarang';
+                showNotification('Gagal terhubung ke server. Cek koneksi internet Anda.', 'error');
+                console.error('Booking fetch exception:', error);
             }
         }
 

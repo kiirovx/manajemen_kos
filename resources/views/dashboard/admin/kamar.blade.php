@@ -1,4 +1,4 @@
-        <div class="page" id="manajemen-kamar">
+<div class="page" id="manajemen-kamar">
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Manajemen Kamar</h1>
@@ -12,7 +12,13 @@
 
             @if (session('success'))
                 <div style="margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; background: #D1FAE5; color: #065F46; font-size: 13px; font-weight: 600;">
-                    {{ session('success') }}
+                    <i class="fas fa-check-circle"></i> {{ session('success') }}
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div style="margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; background: #FEE2E2; color: #7F1D1D; font-size: 13px; font-weight: 600;">
+                    <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
                 </div>
             @endif
 
@@ -80,6 +86,8 @@
                             <tr>
                                 <th>No. Kamar</th>
                                 <th>Tipe</th>
+                                <th>Kapasitas</th>
+                                <th>Slot</th>
                                 <th>Status</th>
                                 <th>Penyewa</th>
                                 <th>Harga</th>
@@ -99,27 +107,38 @@
                                 <tr>
                                     <td><strong>{{ $room->number }}</strong></td>
                                     <td>{{ ucfirst($room->type) }}</td>
+                                    <td>{{ $room->capacity ?? 1 }}</td>
+                                    <td>{{ $room->slots ?? $room->capacity ?? 1 }}</td>
                                     <td><span class="badge {{ $status['class'] }}">{{ $status['label'] }}</span></td>
                                     <td>{{ $room->tenantProfiles->first()?->user?->name ?? '-' }}</td>
                                     <td>Rp {{ number_format((float) $room->price, 0, ',', '.') }}</td>
                                     <td>{{ $room->floor }}</td>
-                                    <td>
-                                        <button class="action-btn" title="Edit"
+                                    <td style="display: flex; gap: 8px; align-items: center;">
+                                        <button class="action-btn" title="Edit" style="color: #667eea;"
                                             onclick='openEditRoomModal({{ json_encode([
                                                 'id' => $room->id,
                                                 'number' => $room->number,
                                                 'type' => $room->type,
                                                 'price' => (float) $room->price,
                                                 'floor' => $room->floor,
+                                                'capacity' => (int) ($room->capacity ?? 1),
+                                                'slots' => (int) ($room->slots ?? $room->capacity ?? 1),
+                                                'description' => $room->description ?? '',
+                                                'facilities' => $room->facilities ?? '',
+                                                'photos' => $room->photos ?? '',
                                                 'status' => $room->status,
                                             ]) }})'>
                                             <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="action-btn" title="Hapus" style="color: #DC2626;"
+                                            onclick='openDeleteRoomModal({{ json_encode(['id' => $room->id, 'number' => $room->number, 'type' => ucfirst($room->type)]) }})'>
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" style="text-align: center; color: #999;">Belum ada data kamar.</td>
+                                    <td colspan="9" style="text-align: center; color: #999;">Belum ada data kamar.</td>
                                 </tr>
                             @endforelse
                         </tbody>

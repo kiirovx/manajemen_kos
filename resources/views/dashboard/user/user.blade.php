@@ -7,6 +7,23 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>User Dashboard - KosKita</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Midtrans Snap JS — diperlukan untuk pembayaran di dashboard -->
+    <script src="{{ config('midtrans.snap_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+    <script>
+        // MIDTRANS DEBUG LOGGING
+        console.log('[KosKita] Midtrans Snap URL:', @json(config('midtrans.snap_url')));
+        console.log('[KosKita] Client Key tersedia:', @json(!empty(config('midtrans.client_key'))));
+        window.addEventListener('load', function() {
+            if (typeof window.snap === 'undefined') {
+                console.error('[KosKita] FATAL: window.snap TIDAK tersedia setelah halaman dimuat. Periksa:');
+                console.error('  - MIDTRANS_CLIENT_KEY di .env');
+                console.error('  - MIDTRANS_IS_PRODUCTION di .env');
+                console.error('  - URL Snap JS: ' + @json(config('midtrans.snap_url')));
+            } else {
+                console.log('[KosKita] window.snap berhasil dimuat ✓');
+            }
+        });
+    </script>
     <style>
         * {
             margin: 0;

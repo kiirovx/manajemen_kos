@@ -356,6 +356,7 @@
             <!-- LOGIN FORM -->
             <form id="loginForm" method="POST" action="{{ route('login.process') }}">
                 @csrf
+                <input type="hidden" name="redirect_to" value="{{ request('redirect_to', '') }}">
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" placeholder="Masukkan email Anda" required
@@ -363,12 +364,18 @@
                 </div>
 
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <label for="password" style="margin-bottom: 0;">Password</label>
-                        <a href="{{ route('forgot-password.page') }}" style="color: #667eea; text-decoration: none; font-size: 12px; font-weight: 600;">Lupa Password?</a>
                     </div>
                     <input type="password" id="password" name="password" placeholder="Masukkan password" required
                         autocomplete="current-password">
+                    <a href="{{ route('forgot-password.page') }}"
+                        style="color: #667eea; text-decoration: none; font-size: 12px; font-weight: 600; ;">Lupa
+                        Password?</a>
+                </div>
+                <div>
+
                 </div>
 
                 <button type="submit" class="login-btn" id="loginBtn">

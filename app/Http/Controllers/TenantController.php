@@ -8,6 +8,7 @@ use App\Models\TenantProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class TenantController extends Controller
@@ -51,6 +52,7 @@ class TenantController extends Controller
                 'address' => $validated['address'] ?? null,
                 'lease_start' => $validated['lease_start'],
                 'lease_end' => $validated['lease_end'] ?? null,
+                'status' => 'Aktif',
             ]);
 
             $room->update(['status' => 'occupied']);
@@ -105,5 +107,104 @@ class TenantController extends Controller
 
         return redirect(route('dashboard.admin') . '#manajemen-penyewa')
             ->with('success', 'Data penyewa berhasil diperbarui.');
+    }
+
+    /**
+     * Admin: Terima penyewa dari review booking.
+     */
+    public function approve(TenantProfile $tenant)
+    {
+        if ($tenant->status !== 'Menunggu Persetujuan') {
+            return redirect(route('dashboard.admin') . '#booking-review')
+                ->with('error', 'Penyewa sudah tidak dalam status Menunggu Persetujuan.');
+        }
+
+        DB::transaction(function () use ($tenant) {
+            $tenant->update([
+                'status' => 'Aktif',
+                'approved_at' => now(),
+                'rejection_reason' => null,
+            ]);
+
+            // Update status kamar
+            $room = $tenant->room;
+            if ($room && $room->status !== 'occupied') {
+                $room->update(['status' => 'occupied']);
+            }
+
+            Log::info('Tenant approved by admin', [
+                'tenant_id' => $tenant->id,
+                'user_id' => $tenant->user_id,
+                'room_id' => $tenant->room_id,
+            ]);
+        });
+
+        return redirect(route('dashboard.admin') . '#booking-review')
+            ->with('success', 'Penyewa berhasil diterima. Sekarang berstatus Aktif.');
+    }
+
+    /**
+     * Admin: Tolak penyewa dari review booking.
+     */
+    public function reject(Request $request, TenantProfile $tenant)
+    {
+        if ($tenant->status !== 'Menunggu Persetujuan') {
+            return redirect(route('dashboard.admin') . '#booking-review')
+                ->with('error', 'Penyewa sudah tidak dalam status Menunggu Persetujuan.');
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        DB::transaction(function () use ($tenant, $validated) {
+            $tenant->update([
+                'status' => 'Ditolak',
+                'rejection_reason' => $validated['rejection_reason'],
+            ]);
+
+            Log::info('Tenant rejected by admin', [
+                'tenant_id' => $tenant->id,
+                'user_id' => $tenant->user_id,
+                'reason' => $validated['rejection_reason'],
+            ]);
+        });
+
+        return redirect(route('dashboard.admin') . '#booking-review')
+            ->with('success', 'Penyewa telah ditolak.');
+    }
+
+    /**
+     * Admin: Tandai penyewa sudah keluar (check-out).
+     */
+    public function checkOut(TenantProfile $tenant)
+    {
+        if (!in_array($tenant->status, ['Aktif', 'Nonaktif'])) {
+            return redirect(route('dashboard.admin') . '#manajemen-penyewa')
+                ->with('error', 'Hanya penyewa Aktif yang dapat di-check-out.');
+        }
+
+        DB::transaction(function () use ($tenant) {
+            $tenant->update([
+                'status' => 'Keluar',
+                'checked_out_at' => now(),
+            ]);
+
+            // Kembalikan kamar ke status available
+            $room = $tenant->room;
+            if ($room && $room->status === 'occupied') {
+                $room->update(['status' => 'available']);
+                $room->increaseSlot();
+            }
+
+            Log::info('Tenant checked out', [
+                'tenant_id' => $tenant->id,
+                'user_id' => $tenant->user_id,
+                'room_id' => $tenant->room_id,
+            ]);
+        });
+
+        return redirect(route('dashboard.admin') . '#manajemen-penyewa')
+            ->with('success', 'Penyewa berhasil di-check-out. Kamar dikembalikan ke status tersedia.');
     }
 }

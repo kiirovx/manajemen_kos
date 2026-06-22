@@ -52,11 +52,90 @@
                     </div>
                     <div class="stat-content">
                         <h3>Pendapatan Bulan Ini</h3>
-                        <div class="number">Rp {{ number_format($financeStats['income'], 0, ',', '.') }}</div>
-                        <div class="change"><i class="fas fa-arrow-up"></i> {{ $financeStats['paid_count'] }} pembayaran</div>
+                        <div class="number">Rp {{ number_format($revenueStats['this_month'], 0, ',', '.') }}</div>
+                        <div class="change"><i class="fas fa-arrow-up"></i> {{ $bookingStats['dibayar'] }} booking berhasil</div>
                     </div>
                 </div>
             </div>
+
+            <!-- BOOKING STATS + REVENUE RECAP -->
+            <div class="stats-grid" style="margin-top: 10px;">
+                <div class="stat-card" style="border-bottom-color: #3B82F6;">
+                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-content">
+                        <h3>Total Booking</h3>
+                        <div class="number">{{ $bookingStats['total'] }}</div>
+                        <div class="change">{{ $bookingStats['dibayar'] }} Dibayar | {{ $bookingStats['menunggu_pembayaran'] }} Menunggu</div>
+                    </div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-content">
+                        <h3>Booking Berhasil</h3>
+                        <div class="number">{{ $bookingStats['dibayar'] }}</div>
+                        <div class="change">{{ $bookingStats['pending'] }} Pending | {{ $bookingStats['dibatalkan'] }} Dibatalkan</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #F59E0B;">
+                    <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                    <div class="stat-content">
+                        <h3>Pendapatan Hari Ini</h3>
+                        <div class="number">Rp {{ number_format($revenueStats['today'], 0, ',', '.') }}</div>
+                        <div class="change"><i class="fas fa-calendar-day"></i> Hari ini</div>
+                    </div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-content">
+                        <h3>Pendapatan Bulan Ini</h3>
+                        <div class="number">Rp {{ number_format($revenueStats['this_month'], 0, ',', '.') }}</div>
+                        <div class="change"><i class="fas fa-calendar-alt"></i> {{ now()->format('F Y') }}</div>
+                    </div>
+                </div>
+                <div class="stat-card pink">
+                    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                    <div class="stat-content">
+                        <h3>Total Pendapatan</h3>
+                        <div class="number">Rp {{ number_format($revenueStats['total'], 0, ',', '.') }}</div>
+                        <div class="change"><i class="fas fa-calendar-check"></i> Semua waktu</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-bottom-color: #6366F1;">
+                    <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+                    <div class="stat-content">
+                        <h3>Pendapatan Tahun Ini</h3>
+                        <div class="number">Rp {{ number_format($revenueStats['this_year'], 0, ',', '.') }}</div>
+                        <div class="change"><i class="fas fa-calendar-alt"></i> {{ now()->format('Y') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUICK LINKS -->
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <a href="{{ route('dashboard.admin.transactions') }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #667eea; color: white; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;">
+                    <i class="fas fa-exchange-alt"></i> Transaksi Pembayaran
+                </a>
+                <a href="{{ route('dashboard.admin.reports') }}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #10B981; color: white; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;">
+                    <i class="fas fa-chart-bar"></i> Laporan Keuangan
+                </a>
+            </div>
+
+            <!-- PAYMENT NOTIFICATIONS -->
+            @if($paymentNotifications->count() > 0)
+            <div class="table-container" style="margin-bottom: 20px;">
+                <div class="table-header">
+                    <h3 class="table-title"><i class="fas fa-bell" style="color: #F59E0B;"></i> Notifikasi Pembayaran Terbaru</h3>
+                </div>
+                <div style="padding: 20px;">
+                    @foreach($paymentNotifications as $notif)
+                        <div style="padding: 12px 0; {{ $loop->last ? '' : 'border-bottom: 1px solid #E0E0E0;' }}">
+                            <p style="margin: 0; font-size: 13px; color: #333;">{{ $notif->message }}</p>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; color: #999;">{{ $notif->created_at->diffForHumans() }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
 
             <!-- CHARTS -->
             <div class="dashboard-charts-grid">
@@ -102,28 +181,38 @@
                     <div class="table-header">
                         <h3 class="table-title">Aktivitas Terkini</h3>
                     </div>
-                    <div style="padding: 20px;">
+                    <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
                         @forelse ($recentActivities as $activity)
                             @php
-                                $isFinance = $activity->activity_type === 'Pembayaran';
-                                $iconBg = $isFinance ? '#FEF3C7' : '#D1FAE5';
-                                $iconColor = $isFinance ? '#78350F' : '#065F46';
-                                $icon = $isFinance ? 'fa-dollar-sign' : 'fa-wrench';
-                                $room = $activity->user?->tenantProfile?->room;
+                                $timestamp = $activity['timestamp'];
+                                $diffMinutes = $timestamp->diffInMinutes(now());
+                                $diffHours = $timestamp->diffInHours(now());
+                                $diffDays = $timestamp->diffInDays(now());
+
+                                if ($diffMinutes < 1) {
+                                    $timeAgo = 'Baru saja';
+                                } elseif ($diffMinutes < 60) {
+                                    $timeAgo = $diffMinutes . ' menit lalu';
+                                } elseif ($diffHours < 24) {
+                                    $timeAgo = $diffHours . ' jam lalu';
+                                } elseif ($diffDays === 1) {
+                                    $timeAgo = 'Kemarin';
+                                } else {
+                                    $timeAgo = $diffDays . ' hari lalu';
+                                }
                             @endphp
-                            <div style="padding: 15px 0; border-bottom: 1px solid #E0E0E0; display: flex; align-items: center; gap: 12px;">
-                                <div
-                                    style="width: 40px; height: 40px; border-radius: 50%; background: {{ $iconBg }}; display: flex; align-items: center; justify-content: center; color: {{ $iconColor }};">
-                                    <i class="fas {{ $icon }}"></i>
+                            <div style="padding: 12px 0; border-bottom: 1px solid #F3F4F6; display: flex; align-items: flex-start; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: {{ $activity['icon_bg'] }}; display: flex; align-items: center; justify-content: center; color: {{ $activity['icon_color'] }}; flex-shrink: 0;">
+                                    <i class="fas {{ $activity['icon'] }}" style="font-size: 14px;"></i>
                                 </div>
-                                <div style="flex: 1;">
-                                    <p style="margin: 0; font-weight: 600; color: #333;">{{ $activity->user?->name ?? '-' }}</p>
-                                    <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">{{ $activity->description }}</p>
+                                <div style="flex: 1; min-width: 0;">
+                                    <p style="margin: 0; font-weight: 600; font-size: 13px; color: #111827;">{{ $activity['title'] }}</p>
+                                    <p style="margin: 3px 0 0 0; font-size: 12px; color: #6B7280; line-height: 1.4;">{{ $activity['description'] }}</p>
                                 </div>
-                                <p style="margin: 0; font-size: 12px; color: #999; white-space: nowrap;">{{ $activity->activity_date?->diffForHumans() ?? '-' }}</p>
+                                <span style="font-size: 11px; color: #9CA3AF; white-space: nowrap; flex-shrink: 0;">{{ $timeAgo }}</span>
                             </div>
                         @empty
-                            <p style="color: #999; font-size: 13px;">Belum ada aktivitas.</p>
+                            <p style="color: #9CA3AF; font-size: 13px; text-align: center; padding: 20px 0;">Belum ada aktivitas.</p>
                         @endforelse
                     </div>
                 </div>

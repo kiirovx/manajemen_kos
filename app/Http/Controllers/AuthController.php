@@ -9,9 +9,61 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function loginPage()
+    public function loginPage(Request $request)
     {
+        // Simpan URL yang ingin dituju setelah login (dari query param)
+        if ($request->has('redirect_to') && $request->get('redirect_to') !== '') {
+            session()->put('url.intended', $request->get('redirect_to'));
+        }
+
         return view('auth.login');
+    }
+
+    /**
+     * Sanitasi url.intended yang mungkin berisi POST-only endpoint
+     * yang disimpan oleh middleware auth saat mencegat request POST.
+     */
+    protected function sanitizeIntendedUrl(): void
+    {
+        $intended = session()->get('url.intended');
+
+        if (empty($intended)) {
+            return;
+        }
+
+        // Mapping POST-only endpoints → GET fallback
+        $postToGetMap = [
+            '/booking/store' => '/booking',
+            '/payment/bill/create-snap' => '/payment/bill',
+        ];
+
+        $parsedUrl = parse_url($intended);
+        $intendedPath = $parsedUrl['path'] ?? '/';
+
+        // Urai query string kalau ada
+        $queryString = $parsedUrl['query'] ?? '';
+
+        foreach ($postToGetMap as $postPath => $getPath) {
+            if (str_contains($intendedPath, $postPath)) {
+                $intendedPath = $getPath;
+                $queryString = ''; // Hapus query string dari POST endpoint
+                break;
+            }
+        }
+
+        // Jika intended adalah root (/) atau kosong, hapus saja
+        if (empty($intendedPath) || $intendedPath === '/' || str_contains($intendedPath, '//')) {
+            session()->forget('url.intended');
+            return;
+        }
+
+        // Rekonstruksi intended URL yang aman (GET)
+        $sanitized = $intendedPath;
+        if (!empty($queryString)) {
+            $sanitized .= '?' . $queryString;
+        }
+
+        session()->put('url.intended', $sanitized);
     }
 
     public function loginProcess(Request $request)
@@ -31,14 +83,32 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        if (Auth::user()->role === 'admin') {
-            return redirect()
-                ->route('dashboard.admin')
-                ->with('success', 'Anda berhasil login.');
+        // Cek apakah ada redirect_to dari form (post) — prioritas utama
+        if ($request->filled('redirect_to')) {
+            $intendedUrl = $request->post('redirect_to');
+            $parsedUrl = parse_url($intendedUrl);
+            $intendedPath = ($parsedUrl['path'] ?? '/');
+
+            // Sanitasi: jangan izinkan POST endpoint sebagai intended
+            if (str_contains($intendedPath, '/booking/store') || str_contains($intendedPath, '/payment/bill/create-snap')) {
+                $intendedPath = '/booking';
+            }
+
+            if (!empty($intendedPath) && $intendedPath !== '/' && !str_contains($intendedPath, '//')) {
+                session()->put('url.intended', $intendedPath);
+            }
+        } else {
+            // Tidak ada redirect_to — sanitasi url.intended yang mungkin
+            // diset oleh middleware auth saat mencegat POST request
+            $this->sanitizeIntendedUrl();
         }
 
+        // Gunakan intended() — jika ada intended URL, redirect ke sana
+        // Jika tidak ada, fallback ke dashboard sesuai role
+        $fallbackRoute = Auth::user()->role === 'admin' ? 'dashboard.admin' : 'dashboard.users';
+
         return redirect()
-            ->route('dashboard.users')
+            ->intended(route($fallbackRoute))
             ->with('success', 'Anda berhasil login.');
     }
 
@@ -89,17 +159,14 @@ class AuthController extends Controller
         return view('auth.forgot-password');
     }
 
+    /**
+     * Forgot password verify now handled by PasswordResetController@sendOtp.
+     * This method kept for backward compatibility but redirects to OTP flow.
+     */
     public function forgotPasswordVerify(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ], [
-            'email.exists' => 'Email tidak terdaftar di sistem kami.',
-        ]);
-
-        session(['reset_email' => $request->email]);
-
-        return redirect()->route('reset-password.page');
+        // Forward to PasswordResetController@sendOtp
+        return app(PasswordResetController::class)->sendOtp($request);
     }
 
     public function resetPasswordPage(Request $request)
@@ -108,13 +175,17 @@ class AuthController extends Controller
             return redirect()->route('forgot-password.page')->withErrors(['email' => 'Silakan masukkan email Anda terlebih dahulu.']);
         }
 
+        if (!$request->session()->has('otp_verified')) {
+            return redirect()->route('otp.page')->withErrors(['otp' => 'Silakan verifikasi kode OTP terlebih dahulu.']);
+        }
+
         return view('auth.reset-password');
     }
 
     public function resetPasswordProcess(Request $request)
     {
-        if (!$request->session()->has('reset_email')) {
-            return redirect()->route('forgot-password.page')->withErrors(['email' => 'Sesi reset password kedaluwarsa.']);
+        if (!$request->session()->has('reset_email') || !$request->session()->has('otp_verified')) {
+            return redirect()->route('forgot-password.page')->withErrors(['email' => 'Sesi reset password kedaluwarsa. Silakan ulangi proses.']);
         }
 
         $request->validate([
@@ -130,6 +201,7 @@ class AuthController extends Controller
         }
 
         $request->session()->forget('reset_email');
+        $request->session()->forget('otp_verified');
 
         return redirect()->route('login.page')->with('success', 'Password Anda berhasil diperbarui. Silakan login.');
     }

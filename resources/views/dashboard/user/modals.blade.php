@@ -1,46 +1,17 @@
 <!-- MODALS -->
     <div class="modal" id="paymentModal">
         <div class="modal-content">
-            <div class="modal-header">Lakukan Pembayaran</div>
-            <form onsubmit="handlePayment(event)">
-                <div class="form-group">
-                    <label>Bulan Pembayaran</label>
-                    <select name="payment_id" id="paymentSelect" required>
-                        <option value="">Pilih Bulan</option>
-                        @if($currentBill)
-                        <option value="{{ $currentBill->id }}" selected>
-                            {{ $currentBill->period_label }} - Rp {{ number_format($currentBill->amount, 0, ',', '.') }}
-                        </option>
-                        @endif
-                    </select>
-                </div>
+            <div class="modal-header">Pembayaran Midtrans</div>
+            <p style="font-size: 13px; color: #6B7280; margin-bottom: 16px;">Anda akan diarahkan ke halaman pembayaran Midtrans (Transfer Bank, E-Wallet, dll).</p>
 
-                <div class="form-group">
-                    <label>Metode Pembayaran</label>
-                    <select name="payment_method" required>
-                        <option value="">Pilih Metode</option>
-                        <option>Transfer Bank</option>
-                        <option>E-Wallet</option>
-                        <option>Tunai ke Petugas</option>
-                    </select>
-                </div>
+            <input type="hidden" id="selectedPaymentId" value="{{ $currentBill ? $currentBill->id : '' }}">
 
-                <div class="form-group">
-                    <label>Jumlah</label>
-                    <input type="text" id="paymentAmountDisplay" value="{{ $currentBill ? 'Rp ' . number_format($currentBill->amount, 0, ',', '.') : '' }}" readonly>
-                </div>
-
-                <div
-                    style="background: #FFF5EB; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 12px; color: #78350F;">
-                    <i class="fas fa-info-circle"></i> Pastikan Anda melakukan pembayaran sesuai dengan metode yang
-                    dipilih
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Batal</button>
-                    <button type="submit" class="btn btn-primary">Lanjutkan Pembayaran</button>
-                </div>
-            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="handlePaymentSubmit()">
+                    <i class="fas fa-credit-card"></i> Bayar via Midtrans
+                </button>
+            </div>
         </div>
     </div>
 
@@ -98,44 +69,95 @@
         document.getElementById('paymentModal').classList.remove('show');
     }
 
+    async function handlePaymentSubmit() {
+        const paymentId = document.getElementById('selectedPaymentId').value;
+
+        console.log('[KosKita] handlePaymentSubmit() dipanggil. Payment ID:', paymentId);
+
+        if (!paymentId) {
+            showNotification('Tidak ada tagihan yang tersedia.', 'error');
+            return;
+        }
+
+        // Validasi window.snap tersedia SEBELUM fetch
+        if (typeof window.snap === 'undefined') {
+            console.error('[KosKita] ERROR: window.snap tidak tersedia! Midtrans Snap JS tidak dimuat.');
+            showNotification(
+                'Layanan pembayaran tidak dapat dimuat. Silakan muat ulang halaman atau hubungi admin.',
+                'error'
+            );
+            return;
+        }
+
+        console.log('[KosKita] window.snap tersedia ✓');
+
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        try {
+            const url = '/payment/bill/create-snap/' + paymentId;
+            console.log('[KosKita] Mengirim request ke:', url);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+            });
+            const data = await res.json();
+
+            console.log('[KosKita] Response dari server:', { ok: res.ok, status: res.status, data: data });
+
+            if (!res.ok) {
+                const errMsg = data.message || 'Server error (HTTP ' + res.status + ')';
+                showNotification('Midtrans Error: ' + errMsg, 'error');
+                console.error('[KosKita] Midtrans response error:', data);
+                return;
+            }
+
+            if (data.success && data.snap_token) {
+                console.log('[KosKita] Snap token diterima:', data.snap_token.substring(0, 20) + '...');
+                closePaymentModal();
+
+                // Verifikasi ulang sebelum memanggil snap.pay()
+                if (typeof window.snap !== 'undefined' && typeof window.snap.pay === 'function') {
+                    console.log('[KosKita] Memanggil window.snap.pay()...');
+                    window.snap.pay(data.snap_token, {
+                        onSuccess: function(result) {
+                            console.log('[KosKita] Pembayaran berhasil:', result);
+                            showNotification('Pembayaran berhasil! Tagihan langsung Lunas.', 'success');
+                            setTimeout(() => location.reload(), 2000);
+                        },
+                        onPending: function(result) {
+                            console.log('[KosKita] Pembayaran pending:', result);
+                            showNotification('Pembayaran pending. Silakan tunggu.', 'success');
+                            setTimeout(() => location.reload(), 2000);
+                        },
+                        onError: function(result) {
+                            console.error('[KosKita] Pembayaran gagal:', result);
+                            showNotification('Pembayaran gagal: ' + (result.status_message || 'Silakan coba lagi.'), 'error');
+                        },
+                        onClose: function() {
+                            console.log('[KosKita] Popup pembayaran ditutup oleh user.');
+                            showNotification('Popup pembayaran ditutup. Silakan coba lagi jika belum selesai.', 'error');
+                        }
+                    });
+                } else {
+                    console.error('[KosKita] ERROR: window.snap.pay bukan fungsi meskipun token diterima!');
+                    showNotification('Snap Midtrans tidak tersedia. Muat ulang halaman dan coba lagi.', 'error');
+                }
+            } else {
+                const failMsg = data.message || 'Gagal membuat transaksi. Cek konfigurasi Midtrans (Server Key / Mode).';
+                showNotification(failMsg, 'error');
+                console.error('[KosKita] Snap token failure:', data);
+            }
+        } catch (e) {
+            showNotification('Gagal terhubung ke server. Periksa koneksi internet Anda.', 'error');
+            console.error('[KosKita] Midtrans fetch exception:', e);
+        }
+    }
+
     function openMaintenanceModal() {
         document.getElementById('maintenanceModal').classList.add('show');
     }
 
     function closeMaintenanceModal() {
         document.getElementById('maintenanceModal').classList.remove('show');
-    }
-
-    async function handlePayment(event) {
-        event.preventDefault();
-
-        const form = event.target;
-        const formData = new FormData(form);
-        const payload = Object.fromEntries(formData.entries());
-
-        try {
-            const response = await fetch('{{ route('dashboard.payment.store') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                closePaymentModal();
-                showNotification(data.message, 'success');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showNotification('Gagal memproses pembayaran.', 'error');
-            }
-        } catch (error) {
-            showNotification('Terjadi kesalahan saat memproses pembayaran.', 'error');
-        }
     }
 
     async function handleMaintenance(event) {

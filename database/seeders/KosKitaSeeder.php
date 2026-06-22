@@ -48,61 +48,9 @@ class KosKitaSeeder extends Seeder
         ]);
 
         Payment::insert([
-            [
-                'user_id' => $user->id,
-                'period_label' => 'Desember 2024',
-                'amount' => 1500000,
-                'due_date' => '2024-12-01',
-                'paid_date' => null,
-                'status' => 'pending',
-                'payment_method' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_id' => $user->id,
-                'period_label' => 'November 2024',
-                'amount' => 1500000,
-                'due_date' => '2024-11-01',
-                'paid_date' => '2024-11-01',
-                'status' => 'paid',
-                'payment_method' => 'Transfer Bank',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_id' => $user->id,
-                'period_label' => 'Oktober 2024',
-                'amount' => 1500000,
-                'due_date' => '2024-10-01',
-                'paid_date' => '2024-10-30',
-                'status' => 'paid',
-                'payment_method' => 'Transfer Bank',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_id' => $user->id,
-                'period_label' => 'September 2024',
-                'amount' => 1500000,
-                'due_date' => '2024-09-01',
-                'paid_date' => '2024-09-02',
-                'status' => 'paid',
-                'payment_method' => 'E-Wallet',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_id' => $user->id,
-                'period_label' => 'Agustus 2024',
-                'amount' => 1500000,
-                'due_date' => '2024-08-01',
-                'paid_date' => '2024-08-01',
-                'status' => 'paid',
-                'payment_method' => 'Transfer Bank',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            
+         
+            
         ]);
 
         MaintenanceRequest::insert([
@@ -145,15 +93,7 @@ class KosKitaSeeder extends Seeder
         ]);
 
         Notification::insert([
-            [
-                'user_id' => $user->id,
-                'title' => 'Pembayaran Berhasil Dikonfirmasi',
-                'message' => 'Pembayaran Anda sebesar Rp 1.500.000 untuk bulan November telah berhasil dikonfirmasi dan diterima oleh sistem',
-                'type' => 'success',
-                'is_read' => false,
-                'created_at' => now()->subHours(2),
-                'updated_at' => now()->subHours(2),
-            ],
+          
             [
                 'user_id' => $user->id,
                 'title' => 'Pengumuman Maintenance Kamar',
@@ -193,15 +133,7 @@ class KosKitaSeeder extends Seeder
         ]);
 
         ActivityLog::insert([
-            [
-                'user_id' => $user->id,
-                'activity_type' => 'Pembayaran',
-                'description' => 'Pembayaran bulan November (Rp 1.500.000)',
-                'status' => 'Berhasil',
-                'activity_date' => '2024-11-23',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+           
             [
                 'user_id' => $user->id,
                 'activity_type' => 'Maintenance',
@@ -220,24 +152,8 @@ class KosKitaSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'user_id' => $user->id,
-                'activity_type' => 'Maintenance',
-                'description' => 'Ajukan perbaikan: Lampu kamar mati',
-                'status' => 'Selesai',
-                'activity_date' => '2024-11-15',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_id' => $user->id,
-                'activity_type' => 'Pembayaran',
-                'description' => 'Pembayaran bulan Oktober (Rp 1.500.000)',
-                'status' => 'Berhasil',
-                'activity_date' => '2024-11-01',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        
+       
             [
                 'user_id' => $user->id,
                 'activity_type' => 'Maintenance',
@@ -256,15 +172,7 @@ class KosKitaSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'user_id' => $user->id,
-                'activity_type' => 'Pembayaran',
-                'description' => 'Pembayaran bulan September (Rp 1.500.000)',
-                'status' => 'Berhasil',
-                'activity_date' => '2024-10-01',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+          
         ]);
     }
 }

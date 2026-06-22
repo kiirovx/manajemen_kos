@@ -10,6 +10,7 @@ class TenantProfile extends Model
     protected $fillable = [
         'user_id',
         'room_id',
+        'booking_id',
         'phone',
         'identity_number',
         'birth_date',
@@ -24,6 +25,10 @@ class TenantProfile extends Model
         'deposit_date',
         'deposit_status',
         'deposit_notes',
+        'status',
+        'rejection_reason',
+        'approved_at',
+        'checked_out_at',
     ];
 
     protected function casts(): array
@@ -34,6 +39,8 @@ class TenantProfile extends Model
             'lease_end' => 'date',
             'deposit_date' => 'date',
             'deposit_amount' => 'decimal:2',
+            'approved_at' => 'datetime',
+            'checked_out_at' => 'datetime',
         ];
     }
 
@@ -45,5 +52,10 @@ class TenantProfile extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function booking(): BelongsTo
+    {
+        return $this->belongsTo(Booking::class);
     }
 }

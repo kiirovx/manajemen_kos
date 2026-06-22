@@ -1,13 +1,53 @@
-        <div class="page" id="laporan-keuangan">
+<div class="page" id="laporan-keuangan">
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Laporan Keuangan</h1>
-                    <p class="page-subtitle">Pantau pemasukan dan tagihan pembayaran kos</p>
+                    <p class="page-subtitle">Pantau pemasukan dari transaksi Midtrans yang berhasil</p>
                 </div>
-                <button class="btn-primary" onclick="exportPDF()">
-                    <i class="fas fa-download"></i>
-                    Export PDF
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <a href="{{ route('dashboard.admin.export.pdf', ['type' => 'revenue']) }}?{{ http_build_query(request()->only(['filter', 'start_date', 'end_date'])) }}" class="btn-primary" style="background: #DC2626;" target="_blank">
+                        <i class="fas fa-file-pdf"></i> Export PDF (Pendapatan)
+                    </a>
+                    <a href="{{ route('dashboard.admin.export.excel', ['type' => 'revenue']) }}?{{ http_build_query(request()->only(['filter', 'start_date', 'end_date'])) }}" class="btn-primary" style="background: #10B981;">
+                        <i class="fas fa-file-excel"></i> Export Excel (Pendapatan)
+                    </a>
+                </div>
+            </div>
+
+            <!-- FILTERS -->
+            <div style="background: white; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <form method="GET" id="filterForm" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <input type="hidden" name="t" value="keuangan">
+
+                    <!-- Filter Cepat Dropdown -->
+                    <select name="filter" onchange="this.form.submit()"
+                        style="padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 13px; background: white; font-family: inherit; cursor: pointer; min-width: 140px;">
+                        <option value="">Semua Waktu</option>
+                        <option value="today" {{ request('filter') === 'today' ? 'selected' : '' }}>Hari Ini</option>
+                        <option value="week" {{ request('filter') === 'week' ? 'selected' : '' }}>Minggu Ini</option>
+                        <option value="month" {{ request('filter') === 'month' ? 'selected' : '' }}>Bulan Ini</option>
+                        <option value="year" {{ request('filter') === 'year' ? 'selected' : '' }}>Tahun Ini</option>
+                    </select>
+
+                    <span style="color: #9CA3AF; font-size: 13px; font-weight: 500;">atau</span>
+
+                    <!-- Rentang Tanggal -->
+                    <input type="date" name="start_date" value="{{ request('start_date') }}"
+                        style="padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 13px; font-family: inherit;">
+                    <span style="color: #9CA3AF; font-size: 13px;">s/d</span>
+                    <input type="date" name="end_date" value="{{ request('end_date') }}"
+                        style="padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 13px; font-family: inherit;">
+
+                    <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 13px;">
+                        <i class="fas fa-filter"></i> Terapkan
+                    </button>
+
+                    @if(request('filter') || request('start_date') || request('end_date'))
+                        <a href="?#laporan-keuangan" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: #FEE2E2; color: #DC2626; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; border: 1px solid #FECACA;">
+                            <i class="fas fa-times"></i> Reset
+                        </a>
+                    @endif
+                </form>
             </div>
 
             <!-- STAT CARDS -->
@@ -17,22 +57,10 @@
                         <i class="fas fa-arrow-up"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Total Pemasukan</h3>
-                        <div class="number">Rp {{ number_format($financeStats['income'], 0, ',', '.') }}</div>
+                        <h3>Total Pendapatan</h3>
+                        <div class="number">Rp {{ number_format($filteredRevenueStats['total'] ?? 0, 0, ',', '.') }}</div>
                         <div class="change" style="color: #10B981;">
-                            <i class="fas fa-check"></i> {{ $financeStats['paid_count'] }} pembayaran lunas
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card" style="border-bottom-color: #F472B6;">
-                    <div class="stat-icon" style="background: #F472B6;">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3>Piutang Belum Dibayar</h3>
-                        <div class="number">Rp {{ number_format($financeStats['pending'], 0, ',', '.') }}</div>
-                        <div class="change" style="color: #78350F;">
-                            <i class="fas fa-exclamation-circle"></i> Tagihan pending
+                            <i class="fas fa-check"></i> {{ $filteredBookingStats['dibayar'] ?? 0 }} booking berhasil
                         </div>
                     </div>
                 </div>
@@ -41,69 +69,34 @@
                         <i class="fas fa-wallet"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Saldo Bersih</h3>
-                        <div class="number">Rp {{ number_format($financeStats['net'], 0, ',', '.') }}</div>
+                        <h3>Total Transaksi</h3>
+                        <div class="number">{{ $filteredBookingStats['total'] ?? 0 }}</div>
                         <div class="change" style="color: #10B981;">
-                            <i class="fas fa-calculator"></i> Pengeluaran tercatat Rp {{ number_format($financeStats['expense'], 0, ',', '.') }}
+                            <i class="fas fa-exchange-alt"></i> Semua status
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- CHARTS -->
-            <div class="dashboard-charts-grid">
-                <div class="chart-container">
-                    <h3>Pemasukan dan Tagihan per Bulan</h3>
-                    <div
-                        style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; padding: 20px 10px; gap: 12px;">
-                        @foreach ($monthlyFinance as $month)
-                            @php
-                                $incomeHeight = $month['income'] > 0 ? max(8, ($month['income'] / $maxMonthlyAmount) * 220) : 4;
-                                $pendingHeight = $month['pending'] > 0 ? max(8, ($month['pending'] / $maxMonthlyAmount) * 220) : 4;
-                            @endphp
-                            <div style="display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 48px;">
-                                <div style="height: 235px; display: flex; align-items: flex-end; gap: 4px; width: 100%; justify-content: center;">
-                                    <div title="Lunas: Rp {{ number_format($month['income'], 0, ',', '.') }}"
-                                        style="width: 14px; height: {{ $incomeHeight }}px; background: #10B981; border-radius: 4px 4px 0 0;">
-                                    </div>
-                                    <div title="Pending: Rp {{ number_format($month['pending'], 0, ',', '.') }}"
-                                        style="width: 14px; height: {{ $pendingHeight }}px; background: #F59E0B; border-radius: 4px 4px 0 0;">
-                                    </div>
-                                </div>
-                                <span style="font-size: 11px; color: #666; font-weight: 600; text-align: center;">{{ $month['label'] }}</span>
-                            </div>
-                        @endforeach
+                <div class="stat-card" style="border-bottom-color: #F472B6;">
+                    <div class="stat-icon" style="background: #F472B6;">
+                        <i class="fas fa-clock"></i>
                     </div>
-                    <div style="display: flex; gap: 16px; padding: 0 20px 20px; font-size: 12px; color: #666;">
-                        <span><span style="display: inline-block; width: 10px; height: 10px; background: #10B981; border-radius: 2px;"></span> Lunas</span>
-                        <span><span style="display: inline-block; width: 10px; height: 10px; background: #F59E0B; border-radius: 2px;"></span> Pending</span>
+                    <div class="stat-content">
+                        <h3>Booking Pending</h3>
+                        <div class="number">{{ $filteredBookingStats['pending'] ?? 0 }}</div>
+                        <div class="change" style="color: #78350F;">
+                            <i class="fas fa-exclamation-circle"></i> Menunggu pembayaran
+                        </div>
                     </div>
                 </div>
-
-                <div class="chart-container">
-                    <h3>Ringkasan Pembayaran</h3>
-                    <div style="padding: 20px;">
-                        <div style="margin-bottom: 18px;">
-                            <p style="margin: 0 0 8px; font-size: 12px; color: #666;">Pembayaran lunas</p>
-                            <div style="height: 10px; background: #E5E7EB; border-radius: 999px; overflow: hidden;">
-                                @php
-                                    $totalTracked = max(1, $financeStats['income'] + $financeStats['pending']);
-                                    $paidPercent = ($financeStats['income'] / $totalTracked) * 100;
-                                @endphp
-                                <div style="height: 100%; width: {{ $paidPercent }}%; background: #10B981;"></div>
-                            </div>
-                            <p style="margin: 8px 0 0; font-size: 13px; font-weight: 700; color: #10B981;">
-                                {{ round($paidPercent, 1) }}%
-                            </p>
-                        </div>
-                        <div>
-                            <p style="margin: 0 0 8px; font-size: 12px; color: #666;">Tagihan pending</p>
-                            <div style="height: 10px; background: #E5E7EB; border-radius: 999px; overflow: hidden;">
-                                <div style="height: 100%; width: {{ 100 - $paidPercent }}%; background: #F59E0B;"></div>
-                            </div>
-                            <p style="margin: 8px 0 0; font-size: 13px; font-weight: 700; color: #F59E0B;">
-                                {{ round(100 - $paidPercent, 1) }}%
-                            </p>
+                <div class="stat-card pink">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Booking Dibatalkan</h3>
+                        <div class="number">{{ $filteredBookingStats['dibatalkan'] ?? 0 }}</div>
+                        <div class="change" style="color: #DC2626;">
+                            <i class="fas fa-ban"></i> Tidak termasuk pendapatan
                         </div>
                     </div>
                 </div>
@@ -112,11 +105,23 @@
             <!-- TRANSACTION TABLE -->
             <div class="table-container">
                 <div class="table-header">
-                    <h3 class="table-title">Transaksi Terbaru</h3>
+                    <h3 class="table-title">
+                        Daftar Transaksi
+                        @if(request('filter') === 'today') — Hari Ini
+                        @elseif(request('filter') === 'week') — Minggu Ini
+                        @elseif(request('filter') === 'month') — Bulan Ini
+                        @elseif(request('filter') === 'year') — Tahun Ini
+                        @elseif(request('start_date') && request('end_date')) — {{ request('start_date') }} s/d {{ request('end_date') }}
+                        @else — Semua Waktu
+                        @endif
+                    </h3>
                     <div class="table-actions">
-                        <button class="filter-btn" onclick="exportExcel()">
-                            <i class="fas fa-file-excel"></i> Export CSV
-                        </button>
+                        <a href="{{ route('dashboard.admin.export.pdf', ['type' => 'payments']) }}?{{ http_build_query(request()->only(['filter', 'start_date', 'end_date'])) }}" class="filter-btn" target="_blank" style="text-decoration: none;">
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </a>
+                        <a href="{{ route('dashboard.admin.export.excel', ['type' => 'payments']) }}?{{ http_build_query(request()->only(['filter', 'start_date', 'end_date'])) }}" class="filter-btn" style="text-decoration: none;">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </a>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -124,45 +129,50 @@
                         <thead>
                             <tr>
                                 <th>Tanggal</th>
-                                <th>Keterangan</th>
+                                <th>Pelanggan</th>
                                 <th>Kamar</th>
-                                <th>Tipe</th>
+                                <th>Order ID</th>
+                                <th>Metode</th>
                                 <th>Jumlah</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($recentTransactions as $payment)
+                            @forelse ($filteredBookings as $booking)
                                 @php
-                                    $isPaid = $payment->status === 'paid';
-                                    $date = $payment->paid_date ?? $payment->due_date;
-                                    $room = $payment->user?->tenantProfile?->room;
+                                    $isPaid = $booking->status === 'Dibayar';
+                                    $isPending = $booking->status === 'Pending';
                                 @endphp
                                 <tr>
-                                    <td>{{ $date?->format('d M Y') ?? '-' }}</td>
-                                    <td>{{ $payment->user?->name ?? '-' }} - {{ $payment->period_label }}</td>
-                                    <td>{{ $room ? 'Kamar ' . $room->number : '-' }}</td>
+                                    <td>{{ $booking->paid_at?->format('d M Y H:i') ?? $booking->created_at->format('d M Y H:i') }}</td>
                                     <td>
-                                        @if ($isPaid)
-                                            <span class="badge success">Masuk</span>
-                                        @else
-                                            <span class="badge warning">Tagihan</span>
-                                        @endif
+                                        <strong>{{ $booking->customer_name }}</strong>
+                                        <br><small style="color: #999;">{{ $booking->customer_email }}</small>
                                     </td>
-                                    <td style="color: {{ $isPaid ? '#10B981' : '#F59E0B' }};">
-                                        {{ $isPaid ? '+' : '' }}Rp {{ number_format((float) $payment->amount, 0, ',', '.') }}
+                                    <td>{{ $booking->room_name ?? $booking->room?->number ?? '-' }}</td>
+                                    <td><code style="font-size: 11px; background: #F5F5F7; padding: 2px 6px; border-radius: 4px;">{{ $booking->midtrans_order_id }}</code></td>
+                                    <td>{{ ucfirst($booking->payment_method ?? '-') }}</td>
+                                    <td style="font-weight: 700; color: {{ $isPaid ? '#10B981' : ($isPending ? '#F59E0B' : '#DC2626') }};">
+                                        Rp {{ number_format(floatval($booking->gross_amount ?: $booking->room_price), 0, ',', '.') }}
                                     </td>
                                     <td>
                                         @if ($isPaid)
-                                            <span class="badge success">Lunas</span>
-                                        @else
+                                            <span class="badge success">Berhasil</span>
+                                        @elseif ($isPending)
                                             <span class="badge warning">Pending</span>
+                                        @elseif ($booking->status === 'Menunggu Pembayaran')
+                                            <span class="badge info">Menunggu</span>
+                                        @else
+                                            <span class="badge danger">{{ $booking->status }}</span>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" style="text-align: center; color: #999;">Belum ada data pembayaran.</td>
+                                    <td colspan="7" style="text-align: center; color: #999; padding: 30px;">
+                                        <i class="fas fa-inbox" style="font-size: 36px; display: block; margin-bottom: 10px; color: #CCC;"></i>
+                                        Belum ada data transaksi pada periode ini.
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -170,39 +180,3 @@
                 </div>
             </div>
         </div>
-
-<script>
-    // ============================================
-    // EXPORT FUNCTIONS
-    // ============================================
-    function exportPDF() {
-        showNotification('Membuka dialog cetak laporan...', 'success');
-        window.print();
-    }
-
-    function exportExcel() {
-        const rows = Array.from(document.querySelectorAll('#financeTransactionsTable tr'));
-        const csv = rows.map(row => {
-            return Array.from(row.children)
-                .map(cell => `"${cell.textContent.trim().replaceAll('"', '""')}"`)
-                .join(',');
-        }).join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'laporan-keuangan.csv';
-        link.click();
-        URL.revokeObjectURL(url);
-        showNotification('Laporan CSV berhasil dibuat', 'success');
-    }
-
-    // ============================================
-    // FILTER FUNCTIONS
-    // ============================================
-    function applyFilter() {
-        console.log('Applying filters...');
-        showNotification('Filter diterapkan', 'success');
-    }
-</script>

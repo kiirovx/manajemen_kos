@@ -15,6 +15,11 @@ class Payment extends Model
         'paid_date',
         'status',
         'payment_method',
+        'midtrans_order_id',
+        'midtrans_snap_token',
+        'midtrans_response',
+        'midtrans_transaction_status',
+        'midtrans_transaction_id',
     ];
 
     protected function casts(): array

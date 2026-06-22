@@ -409,7 +409,7 @@
         </button>
 
         <p class="signup-text">
-          Sudah Punya Akun? <a href="{{ route('login.page') }}">Masuk di sini</a>
+          Sudah Punya Akun? <a href="{{ route('login.page', request()->has('redirect_to') ? ['redirect_to' => request('redirect_to')] : []) }}">Masuk di sini</a>
         </p>
       </form>
     </div>

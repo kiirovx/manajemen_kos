@@ -458,8 +458,15 @@
                 </div>
                 <div class="navbar-actions">
                     <a href="{{ route('booking') }}" class="btn btn-primary">Booking Sekarang</a>
-                    <a href="{{ route('login.page') }}" class="btn btn-login">Login</a>
-
+                    @auth
+                        @if(Auth::user()->role === 'admin')
+                            <a href="{{ route('dashboard.admin') }}" class="btn btn-login">Dashboard Admin</a>
+                        @else
+                            <a href="{{ route('dashboard.users') }}" class="btn btn-login">Dashboard Saya</a>
+                        @endif
+                    @else
+                        <a href="{{ route('login.page') }}" class="btn btn-login">Login</a>
+                    @endauth
                 </div>
             </div>
         </div>
@@ -546,33 +553,37 @@
             </div>
 
             <div class="rooms-grid">
+                @forelse ($rooms as $room)
+                @php
+                    $typeLabels = ['standard' => 'Standard', 'deluxe' => 'Deluxe', 'premium' => 'Premium'];
+                    $typeDisplay = $typeLabels[$room->type] ?? ucfirst($room->type);
+                    $isAlmostFull = $room->status_label === 'Hampir Penuh';
+                    $isFull = $room->status_label === 'Penuh';
+                    $tagClass = $isAlmostFull ? 'room-tag featured' : 'room-tag';
+                    $tagText = $isAlmostFull ? 'Hampir Penuh' : ($isFull ? 'Penuh' : 'Tersedia');
+                    if ($isFull) $tagClass = 'room-tag';
+                @endphp
                 <div class="room-product">
                     <div class="room-image">
-                        <img src="{{ asset('asset/kamar.png') }}" alt="Kamar Standard">
-                        <span class="room-tag">New</span>
-                        <span class="price-tag">Rp 300k</span>
+                        <img src="{{ $room->photos ?: asset('asset/kamar.png') }}" alt="Kamar {{ $room->number }}">
+                        <span class="{{ $tagClass }}">{{ $tagText }}</span>
+                        <span class="price-tag">Rp {{ number_format((float) $room->price, 0, ',', '.') }}</span>
                     </div>
-                    <h3>Kamar Standard</h3>
+                    <h3>{{ $room->name }}</h3>
                     <div class="room-info">
-                        <span><i class="fas fa-expand"></i> Ukuran 3x4 m</span>
-                        <span><i class="fas fa-bed"></i> Kapasitas 1 orang</span>
-                        <span><i class="fas fa-bath"></i> Kamar Mandi Luar</span>
+                        <span><i class="fas fa-bed"></i> Kapasitas {{ $room->capacity }} orang</span>
+                        <span><i class="fas fa-layer-group"></i> Lantai {{ $room->floor }}</span>
+                        @if($room->facilities)
+                        <span><i class="fas fa-check-circle"></i> {{ Str::limit($room->facilities, 40) }}</span>
+                        @endif
                     </div>
                 </div>
-
-                <div class="room-product">
-                    <div class="room-image">
-                        <img src="{{ asset('asset/kamar.png') }}" alt="Kamar Deluxe">
-                        <span class="room-tag featured">Popular</span>
-                        <span class="price-tag">Rp 550k</span>
-                    </div>
-                    <h3>Kamar Deluxe</h3>
-                    <div class="room-info">
-                        <span><i class="fas fa-expand"></i> Ukuran 4x5 m</span>
-                        <span><i class="fas fa-bed"></i> Kapasitas 1 orang</span>
-                        <span><i class="fas fa-bath"></i> Kamar Mandi Dalam</span>
-                    </div>
+                @empty
+                <div class="room-product" style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-door-open" style="font-size: 48px; margin-bottom: 15px; display: block; color: #DDD;"></i>
+                    <p>Belum ada kamar tersedia.</p>
                 </div>
+                @endforelse
             </div>
         </div>
     </section>
@@ -648,7 +659,7 @@
                             <i class="fas fa-envelope"></i>
                             <div>
                                 <p>Email</p>
-                                <span>info@koskita.com</span>
+                                <span>kelviantofarrell@gmail.com</span>
                             </div>
                         </div>
 
